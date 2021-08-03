@@ -277,3 +277,7 @@ protobuf  | 81 | 38
 gson    | 190 | 128
 
 It should be noted that data characteristics, test platform and other factors will affect the results. 
+
+
+## License
+See the [LICENSE](LICENSE.md) file for license rights and limitations.

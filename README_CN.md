@@ -304,3 +304,6 @@ gson    | 190 | 128
 
 需要说明的是，数据特征，测试平台等因素都会影响结果，以上测试结果仅供参考。
 
+
+## License
+See the [LICENSE](LICENSE.md) file for license rights and limitations.
