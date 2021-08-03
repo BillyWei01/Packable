@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VariablesViewState
+   version = "1.0">
+   <ContextStates>
+      <ContextState
+         contextName = "-[man getInt:]:main.m">
+         <PersistentStrings>
+            <PersistentString
+               value = "*p">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+      <ContextState
+         contextName = "+[Human getIntFunc:]:main.m">
+         <PersistentStrings>
+            <PersistentString
+               value = "*m">
+            </PersistentString>
+         </PersistentStrings>
+      </ContextState>
+   </ContextStates>
+</VariablesViewState>

@@ -1,0 +1,10 @@
+/java/.gradle
+/java/.idea
+/java/build
+/java/packable/build
+.DS_Store
+*/*/.DS_Store
+/csharp/pack/bin
+/csharp/pack/obj
+/csharp/.vs
+/go/.idea
