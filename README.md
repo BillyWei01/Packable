@@ -19,7 +19,7 @@ Packable has the following advantages:
 Packable currently implements version of Java, C++, C#, Objective-C, Golang.
 
 ## 2. Usage
-Suppose there are two objects like the following:
+Suppose there are two objects like this:
 
 ```java
 class Data {
@@ -107,10 +107,10 @@ static void test() {
 If you need to deserialize an array of objects, you need to create an instance of PackArrayCreator (this is the case for the Java version,  other versions no need to do this). <br>
 
 ### 2.2 Coded Directly
-The  example above is only one of the examples. It can be used flexibly.< br>
-1. PackCreator does not have to be created in the class that needs to be deserialized. It can also be named anywhere else.
-2. If you only need serialization (sender), you only need to implement Packable.
-3. If there is no class definition or it is inconvenient to rewrite the class, you can also directly encode / decode the message.
+The  example above is only one of the examples. It can be used flexibly.
+1. PackCreator does not have to be created in the class which impleaments Packable. It can also be created anywhere else.
+2. If you only need serialization (sender), you just need to implement Packable.
+3. You can also directly encode / decode the message.
 
 ```java
 static void test2() {
@@ -129,7 +129,7 @@ static void test2() {
 }
 ```
 
-If Item.CREATOR has not beed defined, you could decode items by yourself like this:
+If **Item.CREATOR** has not beed defined, you could decode items by yourself like this:
 
 ```java
 PackDecoder.DecoderArray da = decoder.getDecoderArray(1);
