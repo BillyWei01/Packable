@@ -4,6 +4,8 @@
 
 ## 1. Overview
 Packable is an effective and convinient data interchange format. <br>
+It can be used for object serialization/deserialization, message encapsulation, etc. for local storage or network transmission.Packable is a well designed data interchange format.  <br>
+It has been impleamented multiple languages , which is effective and easy to use. <br>
 It can be used for object serialization/deserialization, message encapsulation, etc. for local storage or network transmission.
 
 Packable has the following advantages:
