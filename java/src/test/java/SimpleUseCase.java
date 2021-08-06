@@ -98,40 +98,24 @@ public class SimpleUseCase {
 
     @Test
     public void test2() {
-        Data data = new Data();
-        data.msg = "message";
-        data.items = new Item[]{new Item(100, 200)};
+        String msg = "message";
+        int a = 100;
+        int b = 200;
 
         PackEncoder encoder = new PackEncoder();
-        encoder.putString(0, data.msg);
-        encoder.putPackableArray(1, data.items);
+        encoder.putString(0, msg)
+                .putInt(1, a)
+                .putInt(2, b);
         byte[] bytes = encoder.getBytes();
 
         PackDecoder decoder = PackDecoder.newInstance(bytes);
-        Data data_2 = new Data();
-        data_2.msg = decoder.getString(0);
-        data_2.items = decoder.getPackableArray(1, Item.CREATOR);
+        String dMsg = decoder.getString(0);
+        int dA = decoder.getInt(1);
+        int dB = decoder.getInt(2);
         decoder.recycle();
 
-        Assert.assertEquals(data, data_2);
-    }
+        boolean equal = msg.equals(dMsg) && (a == dA) && (b == dB);
 
-    // If Item has not implement PackArrayCreator,
-    // is also ok to decode by DecoderArray.
-/*
-        PackDecoder.DecoderArray da = decoder.getDecoderArray(1);
-        if (da != null) {
-            Item[] items = new Item[da.getCount()];
-            int i = 0;
-            while (da.hasNext()) {
-                PackDecoder d = da.next();
-                if (d == null) {
-                    items[i++] = null;
-                } else {
-                    items[i++] = new Item(d.getInt(0), d.getLong(1));
-                }
-            }
-            data_2.items = items;
-        }
-*/
+        Assert.assertTrue(equal);
+    }
 }

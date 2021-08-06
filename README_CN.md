@@ -116,38 +116,24 @@ PackArrayCreator继承于PackCreator，多了一个newArray方法，简单地创
 
 ```java
 static void test2() {
-    Data data = new Data();
+    String msg = "message";
+    int a = 100;
+    int b = 200;
 
-    // 编码
     PackEncoder encoder = new PackEncoder();
-    encoder.putString(0, data.msg);
-    encoder.putPackableArray(1, data.items);
+    encoder.putString(0, msg)
+                .putInt(1, a)
+                .putInt(2, b);
     byte[] bytes = encoder.getBytes();
 
-    // 解码
     PackDecoder decoder = PackDecoder.newInstance(bytes);
-    Data data_2 = new Data();
-    data_2.msg = decoder.getString(0);
-    data_2.items = decoder.getPackableArray(1, Item.CREATOR);
+    String dMsg = decoder.getString(0);
+    int dA = decoder.getInt(1);
+    int dB = decoder.getInt(2);
     decoder.recycle();
-}
-```
 
-甚至，如果没有定义Item.CREATOR, 也可以自行解码items：
-```java
-PackDecoder.DecoderArray da = decoder.getDecoderArray(1);
-if (da != null) {
-    Item[] items = new Item[da.getCount()];
-    int i = 0;
-    while (da.hasNext()) {
-        PackDecoder d = da.next();
-        if (d == null) {
-            items[i++] = null;
-        } else {
-            items[i++] = new Item(d.getInt(0), d.getLong(1));
-        }
-    }
-    data_2.items = items;
+    boolean equal = msg.equals(dMsg) && (a == dA) && (b == dB);
+    Assert.assertTrue(equal);
 }
 ```
 
