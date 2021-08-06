@@ -151,12 +151,8 @@ Rectangle是JDK的一个类，有四个字段：
 
 ![](https://upload-images.jianshu.io/upload_images/1166341-cd89c228fa0a8be5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-我们不能去改JDK代码让Rectangle实现Packable。<br>
-这时候可以定义Wrapper类，传入Rectangle作为成员，
-然后 Wrapper实现Packable，encode接口实际上编码Rectangle的字段；
-或者用一个数组装下Rectangle的字段，再用putArray的方法将其写入。<br>
-
-packable提供的一种效率更高的方法：
+当然，有很多方案去实现。
+packable提供的一种高效（执行效率）的方法：
 
 ```java
 public static class Info implements Packable {
@@ -191,70 +187,11 @@ public static class Info implements Packable {
     };
 }
 ```
-由于Rectanle的四个字段都是固定长度，如果不考虑压缩，其占用空间是可知的（16字节）。<br>
-所以，此方式有点类似于编码数组，但是更加灵活，因为Buffer类可以写入各种类型，而数组要求类型相同，
-此外，putCustom() 返回的实际上就是PackEncoder的buffer, 所以不需要而外创建数组对象，数据也不需要多周转一趟（用数据的方案需要先将值赋值给数组）。<br>
-相比于Wrapper的方案，此方案减少了递归层次，同时不用编码多个index, 效率更高。
-
-更多的用法，可以到对应平台的的项目代码中查看。
+通常情况下，大对象嵌套一些固定字段的小对象还是挺常见的。
+用此方法，可以减少递归层次，以及减少index的解析，能提升不少效率，
 
 ## 3. 性能测试
-除了Protobuf之外，还选择了Gson (json协议的序列化框架之一，java平台）来做下比较。
-
-数据定义如下：
-
-```
-enum Result {
-    SUCCESS = 0;
-    FAILED_1 = 1;
-    FAILED_2 = 2;
-    FAILED_3 = 3;
-}
-
-message Category {  
-    string name = 1;
-    int32 level = 2;
-    int64 i_column = 3;
-    double d_column = 4;
-    optional string des = 5;
-    repeated Category sub_category = 6;
-} 
-
-message Data {  
-    bool d_bool  = 1;
-    float d_float = 2;
-    double d_double = 3;
-    string string_1 = 4;
-    int32 int_1 = 5;
-    int32 int_2 = 6;
-    int32 int_3 = 7;
-    sint32 int_4 = 8;
-    sfixed32 int_5 = 9;
-    int64 long_1 = 10;
-    int64 long_2 = 11;
-    int64 long_3 = 12;
-    sint64 long_4 = 13;
-    sfixed64 long_5 = 14;
-    Category d_categroy = 15;
-    repeated bool bool_array = 16;
-    repeated int32 int_array = 17;
-    repeated int64 long_array  = 18;
-    repeated float float_array = 19;
-    repeated double double_array = 20;
-    repeated string string_array = 21;
-}
-
-message Response {                 
-    Result code = 1;
-    string detail = 2;
-    repeated Data data = 3;
-}
-```
-
-三种类型的嵌套，主数据为Data类，声明了多个类型的字段。
-
-测试数据是用按一定的规则随机生成的，测试中控制Data的数量从少到多，各项指标和Data的数量成正相关。<br>
-所以这里只展示特定数量（2000个Data）的结果。
+除了protobuf之外，还选择了gson (json协议的序列化框架之一，java平台）来做下比较。
 
 空间方面，序列化后数据大小：
 
@@ -284,9 +221,6 @@ gson     | 67 |46
 packable |32 | 21
 protobuf  | 81 | 38
 gson    | 190 | 128
-
-- packable比protobuf快不少，比gson快很多；
-- 以上测试结果是先各跑几轮编解码之后再执行的测试，如果只跑一次的话都会比如上结果慢（JIT优化等因素所致），但对比的结果是一致的。
 
 需要说明的是，数据特征，测试平台等因素都会影响结果，以上测试结果仅供参考。
 

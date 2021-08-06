@@ -5,7 +5,7 @@
 ## 1. Overview
 Packable is a well designed data interchange format.  <br>
 It has been impleamented multiple languages , which is effective and easy to use. <br>
-It can be used for object serialization/deserialization, message encapsulation, etc. for local storage or network transmission.
+It can be used for object serialization/deserialization and message pack up, to storage or RPC.
 
 Packable has the following advantages:
 1. Fast encoding/decoding
@@ -16,9 +16,11 @@ Packable has the following advantages:
 6. Support multiple compression strategies
 7. Supports multiple languages and cross-platforms
 
-Packable currently implements version of Java, C++, C#, Objective-C, Golang.
+Packable currently implements version of Java, C++, C#, Objective-C, Go.
 
-## 2. Usage
+## 2. Exmaple
+Here is usage of Java version,  and APIs on other plaform are similar to Java.
+
 Suppose there are two objects like this:
 
 ```java
@@ -102,9 +104,9 @@ static void test() {
 #### Deserialization
 1. Create a static object, which is an instance of PackCreator<br>
 2. Implement the decode() method, decode each field, and assign it to the object;<br>
-3. Call PackDecoder.unmarshal(), pass in the byte array and PackCreator instance, and get the object.
+3. Call PackDecoder.unmarshal(), tranfer the byte array and PackCreator instance,.
 
-If you need to deserialize an array of objects, you need to create an instance of PackArrayCreator (this is the case for the Java version,  other versions no need to do this). <br>
+If you need to deserialize an array of objects, you need to create an instance of PackArrayCreator (Only Java version need to do this,  other platform no need to do this).  <br>
 
 ### 2.2 Coded Directly
 The  example above is only one of the examples. It can be used flexibly.
@@ -150,7 +152,6 @@ Rectangle has four fields：
 
 ![](https://upload-images.jianshu.io/upload_images/1166341-cd89c228fa0a8be5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-For some reason we can't change the code of Rectangle, so how to do?
 There's a effetive way supplied by packable:
 
 ```java
@@ -187,57 +188,8 @@ public static class Info implements Packable {
 }
 ```
 
+
 ## 3. Benchmark
-Data schema like this:
-```
-enum Result {
-    SUCCESS = 0;
-    FAILED_1 = 1;
-    FAILED_2 = 2;
-    FAILED_3 = 3;
-}
-
-message Category {  
-    string name = 1;
-    int32 level = 2;
-    int64 i_column = 3;
-    double d_column = 4;
-    optional string des = 5;
-    repeated Category sub_category = 6;
-} 
-
-message Data {  
-    bool d_bool  = 1;
-    float d_float = 2;
-    double d_double = 3;
-    string string_1 = 4;
-    int32 int_1 = 5;
-    int32 int_2 = 6;
-    int32 int_3 = 7;
-    sint32 int_4 = 8;
-    sfixed32 int_5 = 9;
-    int64 long_1 = 10;
-    int64 long_2 = 11;
-    int64 long_3 = 12;
-    sint64 long_4 = 13;
-    sfixed64 long_5 = 14;
-    Category d_categroy = 15;
-    repeated bool bool_array = 16;
-    repeated int32 int_array = 17;
-    repeated int64 long_array  = 18;
-    repeated float float_array = 19;
-    repeated double double_array = 20;
-    repeated string string_array = 21;
-}
-
-message Response {                 
-    Result code = 1;
-    string detail = 2;
-    repeated Data data = 3;
-}
-```
-
-Generate 'Response' with 2000 'Data':
 
 Space of serialization bytes:
 
@@ -265,7 +217,8 @@ packable |32 | 21
 protobuf  | 81 | 38
 gson    | 190 | 128
 
-It should be noted that data characteristics, test platform and other factors will affect the results. 
+It should be noted that different test data will get different results.
+Certainty, packable is usually faster than protobuf and gson.
 
 
 ## License
