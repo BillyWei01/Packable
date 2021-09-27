@@ -72,7 +72,11 @@ public final class PackDecoder {
     private int maxIndex = -1;
 
     public static <T> T unmarshal(byte[] bytes, PackCreator<T> creator) {
-        PackDecoder decoder = newInstance(bytes, 0, bytes.length);
+        return unmarshal(bytes, 0, bytes.length, creator);
+    }
+
+    public static <T> T unmarshal(byte[] bytes, int offset, int len, PackCreator<T> creator) {
+        PackDecoder decoder = newInstance(bytes, offset, len);
         T t = creator.decode(decoder);
         decoder.recycle();
         return t;
@@ -725,7 +729,7 @@ public final class PackDecoder {
         return a == null ? null : Arrays.asList(a);
     }
 
-    public int getSize(int index) {
+    int getSize(int index) {
         long info = getInfo(index);
         if (info == NULL_FLAG) {
             return -1;
