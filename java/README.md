@@ -7,6 +7,6 @@ repositories {
 }
 
 dependencies {
-    implementation 'io.github.billywei001:packable:1.0.1'
+    implementation 'io.github.billywei01:packable:1.0.2'
 }
 ```
