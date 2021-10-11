@@ -99,20 +99,20 @@ static void test() {
 #### Serialization
 1. Implements the interface **Packable** <br>
 2. Implement the encode() method,  to encode each field (PackEncoder provides various types of API) <br>
-3. Call the PackEncoder.marshal() method, tranfer the object, and get the byte array.
+3. Call the PackEncoder.marshal() method, transfer the object, and get the byte array.
 
 #### Deserialization
 1. Create a static object, which is an instance of PackCreator<br>
-2. Implement the decode() method, decode each field, and assign it to the object;<br>
-3. Call PackDecoder.unmarshal(), tranfer the byte array and PackCreator instance,.
+2. Implement the decode() method, decode each field, and assign them to the object;<br>
+3. Call PackDecoder.unmarshal(), transfer the byte array and PackCreator instance,.
 
 If you need to deserialize an array of objects, you need to create an instance of PackArrayCreator (Only Java version need to do this,  other platform no need to do this).  <br>
 
 ### 2.2 Coded Directly
 The  example above is only one of the examples. It can be used flexibly.
-1. PackCreator does not have to be created in the class which impleaments Packable. It can also be created anywhere else.
-2. If you only need serialization (sender), you just need to implement Packable.
-3. You can also directly encode / decode the message.
+1. PackCreator does not have to be created in the class which impleaments Packable. It can be created anywhere else.
+2. If you only need serialization, you just need to implement Packable. In that case, it's unnecessary to create instance of PackCreator.
+3. You can directly encode / decode the message, no need to create Class which implement Packable.
 
 ```java
 static void test2() {
@@ -152,7 +152,7 @@ Rectangle has four fields：
 
 ![](https://upload-images.jianshu.io/upload_images/1166341-cd89c228fa0a8be5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-There's a effetive way supplied by packable:
+There's an effetive way supplied by packable:
 
 ```java
 public static class Info implements Packable {
