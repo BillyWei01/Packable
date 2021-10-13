@@ -18,6 +18,13 @@ Packable目前实现了Java、C++、C#、Objective-C、Go等版本。
 ## 2. 使用方法
 以下以JAVA平台的用法举例，其他平台用法类似。
 
+Java代码已发布到Maven仓库，路径如下：
+```gradle
+dependencies {
+    implementation 'io.github.billywei01:packable:1.0.2'
+}
+```
+
 假设有下面这样的两个对象：
 
 ```java
