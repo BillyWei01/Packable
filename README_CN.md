@@ -1,5 +1,7 @@
 # Packbele
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.billywei01/packable)](https://search.maven.org/artifact/io.github.billywei01/packable) 
+
 ## 1.  概述
 Packable是一个高效易用的序列化框架。<br>
 可以用于对象序列化/反序列化，消息封装等，从而方便本地存储或网络传输。
