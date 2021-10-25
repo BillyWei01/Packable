@@ -1,6 +1,6 @@
 # Packbele
 
-[中文文档](README_CN.md)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.billywei01/packable)](https://search.maven.org/artifact/io.github.billywei01/packable) | [中文文档](README_CN.md)
 
 ## 1. Overview
 Packable is a well designed data interchange format.  <br>
