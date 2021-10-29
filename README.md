@@ -3,7 +3,7 @@
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.billywei01/packable)](https://search.maven.org/artifact/io.github.billywei01/packable) | [中文文档](README_CN.md)
 
 ## 1. Overview
-Packable is a well designed data interchange format.  <br>
+Packable is a well designed serialization framework.  <br>
 It has been impleamented multiple languages , which is effective and easy to use. <br>
 It can be used for object serialization/deserialization and message pack up, to storage or RPC.
 
