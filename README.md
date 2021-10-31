@@ -220,6 +220,9 @@ gson    | 190 | 128
 It should be noted that different test data will get different results.
 Certainty, packable is usually faster than protobuf and gson.
 
+# 4. Format
+See: [Packable Format](format.md)
+
 
 ## License
 See the [LICENSE](LICENSE) file for license rights and limitations.
