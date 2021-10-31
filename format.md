@@ -28,7 +28,7 @@ When flag = 1, index range from 16 to 255, [flag|type|0000] takes one byte, inde
 
 So now Packable support 256 fields for one level (message can nest), 256 is enough for most of case, if we need more fields one day in the future, we could use the last four bits of the first byte.
 
--**type**:
+- **type**:
 
 Type |Meaning|User For
 ---|---|---
