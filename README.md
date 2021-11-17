@@ -4,7 +4,7 @@
 
 ## 1. Overview
 Packable is a well designed serialization framework.  <br>
-It has been impleamented multiple languages , which is effective and easy to use. <br>
+It has been impleamented multiple languages , it's effective and easy to use. <br>
 It can be used for object serialization/deserialization and message pack up, to storage or RPC.
 
 Packable has the following advantages:
