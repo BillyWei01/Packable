@@ -171,7 +171,7 @@ public final class PackDecoder {
                 } else {
                     // In case of not able to tell value missing (which infoArray[index] = NULL_FLAG) or value = NULL_FLAG,
                     // We use the highest bit of long value to indicate that the infoArray[index]
-                    // is actually value (when positive) or position of value (mask highest bit to be one 1)
+                    // is actually value (when positive) or position of value (mask the highest bit to be one 1)
 
                     // little end, the high 8 bits at the last byte
                     byte b8 = buffer.hb[buffer.position + 7];
@@ -556,6 +556,8 @@ public final class PackDecoder {
 
     /**
      * To reuse memory, it's highly recommended calling {@link PackDecoder#recycle()} after reading data.
+     * @param index index of value.
+     * @return the PackDecoder.
      */
     public PackDecoder getDecoder(int index) {
         long info = getInfo(index);

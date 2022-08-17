@@ -13,11 +13,11 @@ public class Main {
         //outputData(2000);
 
         // warming up
-//        testPerformance(500, false);
-//
-//        testPerformance(500, true);
-//        testPerformance(1000, true);
-//        testPerformance(2000, true);
+        testPerformance(500, false);
+
+        testPerformance(500, true);
+        testPerformance(1000, true);
+        testPerformance(2000, true);
     }
 
     private static void testPerformance(int n, boolean printResult) {

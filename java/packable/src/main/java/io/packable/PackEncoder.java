@@ -38,6 +38,8 @@ public final class PackEncoder {
     /**
      * After calling this method, don't call any method(including this) of current PackEncoder instance.
      * because the {@link #buffer} had been recycled.
+     *
+     * @return bytes
      */
     public byte[] getBytes() {
         checkBufferState();
@@ -59,6 +61,8 @@ public final class PackEncoder {
     /**
      * Use this function could read result bytes directly,
      * less memory allocate and copy compare with {@link #getBytes()}.
+     *
+     * @return Result
      */
     public Result getResult() {
         checkBufferState();
@@ -110,7 +114,7 @@ public final class PackEncoder {
              * and we double it again if the size still less than doubleLimit.
              * Example:
              * If desSize = 5K, newSize will be 8K,
-             * If sMaxAllocated is larger then 8K, double size again to 16K, otherwise just to 8K.
+             * If sMaxAllocated is larger than 8K, double size again to 16K, otherwise just to 8K.
              */
             int doubleLimit = Math.min(sMaxAllocated, PackConfig.DOUBLE_BUFFER_LIMIT);
             if (newSize < doubleLimit) {
@@ -453,7 +457,7 @@ public final class PackEncoder {
                 // but the PackConfig.MAX_BUFFER_SIZE is 1 << 30,
                 // so it's not impossible to be len >= 0x7fff0000
                 buffer.writeShort(pLen, (short) ((len >>> 16) | 0x8000));
-                buffer.writeShort(pLen + 2, (short)len);
+                buffer.writeShort(pLen + 2, (short) len);
             }
         }
     }
@@ -667,7 +671,11 @@ public final class PackEncoder {
 
     /**
      * Value of map only support Long, Integer, Double, Float,
-     * and value can't be null
+     * and value can't be null.
+     *
+     * @param index index of value
+     * @param map   the map
+     * @return PackEncoder
      */
     public PackEncoder putStr2Number(int index, Map<String, ? extends Number> map) {
         if (map == null) return this;
@@ -730,7 +738,7 @@ public final class PackEncoder {
      * and provide {@link PackDecoder#getSize(int)} to get size of map.  <br>
      * You are free to use your own type,
      * even other dictionary data structure, like TreeMap, SparseArray (in Android SDK). <br>
-     *
+     * <p>
      * Note: <br>
      * Be sure to call {@link PackEncoder#checkCapacity(int)} before putting data to {@link EncodeBuffer},
      * except to use {@link PackEncoder#wrapPackable(Packable)} and {@link PackEncoder#wrapString(String)},
@@ -755,8 +763,12 @@ public final class PackEncoder {
 
     /**
      * Put an enum array (map to int value) to buffer, in a compact way.
-     * Only accept values not large than 255, otherwise will throw IllegalArgumentException.
+     * Only accept values not larger than 255, otherwise will throw IllegalArgumentException.
      * More detail see {@link CompactCoder#putEnumArray(PackEncoder, int, int[])}
+     *
+     * @param index index of key
+     * @param value bytes
+     * @return PackEncoder
      */
     public PackEncoder putEnumArray(int index, int[] value) {
         CompactCoder.putEnumArray(this, index, value);
@@ -766,6 +778,10 @@ public final class PackEncoder {
     /**
      * If many elements of array are many 0 or little integer,
      * use this method could save space.
+     *
+     * @param index index of key
+     * @param value int array
+     * @return PackEncoder
      */
     public PackEncoder putCompactIntArray(int index, int[] value) {
         CompactCoder.putIntArray(this, index, value);
@@ -777,11 +793,6 @@ public final class PackEncoder {
         return this;
     }
 
-    /**
-     * Compression way similar to {@link #putCDouble(int, double)},
-     * What different is this method takes two bits to make flag,
-     * and for those values with 4 significand bits, can compact to 2 bytes.
-     */
     public PackEncoder putCompactDoubleArray(int index, double[] value) {
         CompactCoder.putDoubleArray(this, index, value);
         return this;

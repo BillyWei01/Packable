@@ -23,7 +23,7 @@ Packable目前实现了Java、C++、C#、Objective-C、Go等版本。
 Java代码已发布到Maven仓库，路径如下：
 ```gradle
 dependencies {
-    implementation 'io.github.billywei01:packable:1.0.2'
+    implementation 'io.github.billywei01:packable:1.1.0'
 }
 ```
 
