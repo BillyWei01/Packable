@@ -28,7 +28,7 @@ namespace test.example
                 encoder.PutString(0, name)
                         .PutInt(1, level)
                         .PutLong(2, i_column)
-                        .PutCDouble(3, d_column)
+                        .PutDouble(3, d_column)
                         .PutString(4, des)
                         .PutPackableArray(5, sub_category);
             }
@@ -84,7 +84,7 @@ namespace test.example
                 c.name = decoder.GetString(0);
                 c.level = decoder.GetInt(1);
                 c.i_column = decoder.GetLong(2);
-                c.d_column = decoder.GetCDouble(3);
+                c.d_column = decoder.GetDouble(3);
                 c.des = decoder.GetString(4);
                 c.sub_category = decoder.GetPackableArray(5, CREATOR);
                 return c;
@@ -129,12 +129,12 @@ namespace test.example
                 encoder.PutInt(4, int_1);
                 encoder.PutInt(5, int_2);
                 encoder.PutInt(6, int_3);
-                encoder.PutSInt(7, int_4);
+                encoder.PutInt(7, int_4);
                 encoder.PutInt(8, int_5);
                 encoder.PutLong(9, long_1);
                 encoder.PutLong(10, long_2);
                 encoder.PutLong(11, long_3);
-                encoder.PutSLong(12, long_4);
+                encoder.PutLong(12, long_4);
                 encoder.PutLong(13, long_5);
                 encoder.PutPackable(14, d_categroy);
                 encoder.PutBooleanArray(15, bool_array);
@@ -264,12 +264,12 @@ namespace test.example
                     int_1 = decoder.GetInt(4),
                     int_2 = decoder.GetInt(5),
                     int_3 = decoder.GetInt(6),
-                    int_4 = decoder.GetSInt(7),
+                    int_4 = decoder.GetInt(7),
                     int_5 = decoder.GetInt(8),
                     long_1 = decoder.GetLong(9),
                     long_2 = decoder.GetLong(10),
                     long_3 = decoder.GetLong(11),
-                    long_4 = decoder.GetSLong(12),
+                    long_4 = decoder.GetLong(12),
                     long_5 = decoder.GetLong(13),
                     d_categroy = decoder.GetPackable(14, Category.CREATOR),
                     bool_array = decoder.GetBooleanArray(15),

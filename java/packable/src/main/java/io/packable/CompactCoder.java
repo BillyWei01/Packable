@@ -2,7 +2,7 @@ package io.packable;
 
 /**
  * Helper to encode to buffer and decode from buffer, in a compact way, which could compress data size.
- * Generally it take more time than code directly, and sometimes could takes more space when putting number array.
+ * Generally it takes more time than code directly, and sometimes could take more space when putting number array.
  * It depends on the data,
  * if the array has many compressible elements (like 0, and little integer),
  * it will take less time than code directly, and save a lot of space.
@@ -83,7 +83,7 @@ final class CompactCoder {
         wrapArray(buffer, n, pFlag, wrapper, type);
 
         // wrap len
-        // maxSize must be large than len, so it's safe to put len in position pLen
+        // maxSize must be larger than len, so it's safe to put len in position pLen
         int len = buffer.position - (pLen + sizeOfLen);
         if (sizeOfLen == 1) {
             buffer.hb[pLen] = (byte) len;
@@ -266,7 +266,7 @@ final class CompactCoder {
      * - else if enum less than 4 cases, map value to 2 bits <br>
      * - else if enum less than 16 cases, map value to 4 bits <br>
      * - else if enum less than 256 cases, map value to 8 bits <br>
-     * - other wise , throws IllegalArgumentException <p/>
+     * - otherwise , throws IllegalArgumentException <p/>
      *
      * @param value array of enum's int value,
      *              you can use ordinal(),

@@ -102,64 +102,7 @@ We can regard the map as a specail array, the structure of map is similar to obe
 Key and value could be any type, when it's primary type, encodes with little-endian, when it's object, encodes with object rule.
 
 ## 3. Compressing Encoding
-Some kind of data can use compressing strategy to make message shorter.
-It should be noted the strategys can't always make message shorter, they take effect only if the data feature match.
-The compressing strategys are optional, you could decide to use them or not by data feature.
-
-#### 3.1 Zigzag
-For negative number, the highest bit is 1, so they need to take max bytes(4 or 8) to save the value.
-In some case the value is small negative number, can it be saved with less bytes?
-Zigzag encoding might be helpful: 
-
- 
-```java
-(n << 1) ^ (n >> 31) // encode
-(n >>> 1) ^ -(n & 1) // decode
-```
-
-
-|positive | negative | zigzag 
-|---|---|---
-|0 | | 0
-||-1|1
-|1| | 2|
-| | -2 | 3
-|...|| 
-|2147483647| | 4294967294|
-| |-2147483647| 4294967295|
-
-After zigzag encode, numbers reorder by absolute value.
-So if the absolute value of value is small, it can be saved with less bytes(review the rule of type), otherwise there's no benifit for space, and waste of time.
-
-
-#### 3.2 Double
-Can double value be compressed?
-Here is some double values present in binary:
-
-```
-a:-2.0         1 1000000-0000 0000-00000000-00000000-00000000-00000000-00000000-00000000
-a:-1.0         1 0111111-1111 0000-00000000-00000000-00000000-00000000-00000000-00000000
-a:0.0          0 0000000-0000 0000-00000000-00000000-00000000-00000000-00000000-00000000
-a:0.5          0 0111111-1110 0000-00000000-00000000-00000000-00000000-00000000-00000000
-a:1.0          0 0111111-1111 0000-00000000-00000000-00000000-00000000-00000000-00000000
-a:1.5          0 0111111-1111 1000-00000000-00000000-00000000-00000000-00000000-00000000
-a:2.0          0 1000000-0000 0000-00000000-00000000-00000000-00000000-00000000-00000000
-a:3.98         0 1000000-0000 1111-11010111-00001010-00111101-01110000-10100011-11010111
-a:31.0         0 1000000-0011 1111-00000000-00000000-00000000-00000000-00000000-00000000
-a:32.0         0 1000000-0100 0000-00000000-00000000-00000000-00000000-00000000-00000000
-a:33.0         0 1000000-0100 0000-10000000-00000000-00000000-00000000-00000000-00000000
-a:2097151.0    0 1000001-0011 1111-11111111-11111111-00000000-00000000-00000000-00000000
-a:2097152.0    0 1000001-0100 0000-00000000-00000000-00000000-00000000-00000000-00000000
-a:2097153.0    0 1000001-0100 0000-00000000-00000000-10000000-00000000-00000000-00000000
-```
-
-- To some values can be composed by 2^n, the low bytes is 0.
-- If the value is is 'integer' and less then 2^21(2997152), the lowest 4 bytes is 0.
-
-So we supply the optional encode: swap the highest 4 bytes and the lowest four bytes, then encode with the rule of long value.
-For the double value that match such feature, the strategy can save 4 byets.
-
-#### 3.3 Boolean Array
+#### 3.1 Boolean Array
 ```
 <key> [length] [remain] [v1 v2  ...]
 ```
@@ -168,7 +111,7 @@ The size of array is not always times of 8, so we need to record the size.
 we can record the remain of size (size % 8), and calculate the size by lenght and remain when decoding.
 No matter how large the size is, remain always can save with 3 bits.
 
-#### 3.4 Enum Array
+#### 3.2 Enum Array
 - When the enum has 2 options, we can use 1 bit for one value;
 - When the enum has 4 options, 2 bits for one value;
 - And so on.
@@ -177,9 +120,11 @@ No matter how large the size is, remain always can save with 3 bits.
 The structure of Enun Array is same as boolean array.
 
 
-#### 3.5 Int/Long/Double Array
+#### 3.3 Int/Long/Double Array
 If most of values in array are small and match the compressing strategy, 
 we can use 2 bits to indicate how many bytes the value takes. <br>
+Note: This strategys can't make message shorter if the values is big.<br>
+
 Here is the bytes to save:
 
 bits | 0| 1| 2| 3
@@ -194,5 +139,7 @@ The structure:
 ```
 - size: Size of array, encode with varint.
 - bits: The sequences of extra bits.
+
+
 
 

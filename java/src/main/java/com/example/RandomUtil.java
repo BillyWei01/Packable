@@ -18,18 +18,10 @@ public class RandomUtil {
     }
 
     public static float randomFloat() {
-        int i = random.nextInt(10000);
-        if (i % P == 0) {
-            return 0f;
-        }
-        return random.nextFloat() * i;
+        return random.nextFloat() * random.nextInt(10000);
     }
 
     public static double randomDouble() {
-        int i = random.nextInt(1000000);
-        if (i % P == 0) {
-            return 0D;
-        }
         return random.nextDouble() * random.nextInt(1000000);
     }
 
@@ -61,11 +53,6 @@ public class RandomUtil {
         return i >>> shift;
     }
 
-    public static int randomSignedInt() {
-        int i = randomInt();
-        return (i & 1) == 0 ? i : -i;
-    }
-
     public static long randomLong() {
         long l = random.nextLong();
         if (l % P == 0) {
@@ -73,11 +60,6 @@ public class RandomUtil {
         }
         int shift = ((int) (l & 7)) << 3;
         return l >>> shift;
-    }
-
-    public static long randomSignedLong() {
-        long l = randomLong();
-        return (l & 1) == 1 ? l : -l;
     }
 
     public static String randomString() {
@@ -134,27 +116,11 @@ public class RandomUtil {
         return a;
     }
 
-    public static int[] randomSingedIntArray(int n){
-        int[] a = new int[n];
-        for (int i = 0; i < n; i++) {
-            a[i] = randomSignedInt();
-        }
-        return a;
-    }
-
     public static List<Integer> randomIntList() {
         int n = random.nextInt(ARRAY_SIZE);
         List<Integer> a = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             a.add(Math.abs(random.nextInt()));
-        }
-        return a;
-    }
-
-    public static long[] randomSignedLongArray(int n){
-        long[] a = new long[n];
-        for (int i = 0; i < n; i++) {
-            a[i] = randomSignedLong();
         }
         return a;
     }
@@ -173,14 +139,6 @@ public class RandomUtil {
         List<Float> a = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             a.add(random.nextFloat());
-        }
-        return a;
-    }
-
-    public static double[] randomDoubleArray(int n) {
-        double[] a = new double[n];
-        for (int i = 0; i < n; i++) {
-            a[i] = randomSmallDouble();
         }
         return a;
     }

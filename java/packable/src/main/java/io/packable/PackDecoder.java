@@ -317,24 +317,6 @@ public final class PackDecoder {
         return info == NULL_FLAG ? 0 : (int) info;
     }
 
-    /**
-     * Get integer with zigzag decode.
-     *
-     * @see PackEncoder#putSInt(int, int)
-     */
-    public int getSInt(int index, int defValue) {
-        long info = getInfo(index);
-        if (info == NULL_FLAG) {
-            return defValue;
-        }
-        int n = (int) info;
-        return (n >>> 1) ^ -(n & 1);
-    }
-
-    public int getSInt(int index) {
-        return getSInt(index, 0);
-    }
-
     public long getLong(int index, long defValue) {
         long info = getInfo(index);
         if (info == NULL_FLAG) {
@@ -345,23 +327,6 @@ public final class PackDecoder {
 
     public long getLong(int index) {
         return getLong(index, 0L);
-    }
-
-    /**
-     * Get long value with zigzag decode.
-     * See {@link PackEncoder#putSInt(int, int)}
-     */
-    public long getSLong(int index, long defValue) {
-        long info = getInfo(index);
-        if (info == NULL_FLAG) {
-            return defValue;
-        }
-        long n = info >= 0 ? info : buffer.readLong((int) (info & INT_MASK));
-        return (n >>> 1) ^ -(n & 1);
-    }
-
-    public long getSLong(int index) {
-        return getSLong(index, 0L);
     }
 
     public float getFloat(int index, float defValue) {
@@ -384,22 +349,6 @@ public final class PackDecoder {
 
     public double getDouble(int index) {
         return getDouble(index, 0D);
-    }
-
-    /**
-     * See {@link PackEncoder#putCDouble(int, double)} for encoding part
-     */
-    public double getCDouble(int index, double defValue) {
-        long info = getInfo(index);
-        if (info == NULL_FLAG) {
-            return defValue;
-        }
-        long i = info >= 0 ? info : buffer.readLong((int) (info & INT_MASK));
-        return i == 0L ? 0D : Double.longBitsToDouble((i << 32) | (i >>> 32));
-    }
-
-    public double getCDouble(int index) {
-        return getCDouble(index, 0D);
     }
 
     public String getString(int index, String defValue) {
@@ -426,10 +375,8 @@ public final class PackDecoder {
     /**
      * Decode utf8 bytes to char array(uft16).
      * Transfer char array to String constructor, JDK will just call
-     * "
-     * this.value = Arrays.copyOfRange(value, offset, offset+count);
-     * ",
-     * this way will avoid allocating char array buffer, comparing with the way transfer byte array.
+     * 'this.value = Arrays.copyOfRange(value, offset, offset+count);',
+     * in this way we could avoid allocating char array buffer, comparing with 'new String(byte[])'.
      *
      * And we could reuse char array buffer by {@link DecoderPool#charBuffer} and {@link CharArrayPool}
      */
@@ -608,7 +555,7 @@ public final class PackDecoder {
     }
 
     /**
-     * To reuse memory, it's highly recommended to call {@link PackDecoder#recycle()} after reading data.
+     * To reuse memory, it's highly recommended calling {@link PackDecoder#recycle()} after reading data.
      */
     public PackDecoder getDecoder(int index) {
         long info = getInfo(index);
@@ -621,7 +568,7 @@ public final class PackDecoder {
     }
 
     public final class DecoderArray {
-        private int count;
+        private final int count;
         private int index = 0;
         private PackDecoder decoder = null;
 

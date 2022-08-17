@@ -22,7 +22,7 @@ public class PackVo {
             encoder.putString(0, name)
                     .putInt(1, level)
                     .putLong(2, i_column)
-                    .putCDouble(3, d_column)
+                    .putDouble(3, d_column)
                     .putString(4, des)
                     .putPackableArray(5, sub_category);
         }
@@ -34,7 +34,7 @@ public class PackVo {
                 c.name = decoder.getString(0);
                 c.level = decoder.getInt(1);
                 c.i_column = decoder.getLong(2);
-                c.d_column = decoder.getCDouble(3);
+                c.d_column = decoder.getDouble(3);
                 c.des = decoder.getString(4);
                 c.sub_category = decoder.getPackableArray(5, CREATOR);
                 return c;
@@ -92,12 +92,12 @@ public class PackVo {
                     .putInt(4, int_1)
                     .putInt(5, int_2)
                     .putInt(6, int_3)
-                    .putSInt(7, int_4)
+                    .putInt(7, int_4)
                     .putInt(8, int_5)
                     .putLong(9, long_1)
                     .putLong(10, long_2)
                     .putLong(11, long_3)
-                    .putSLong(12, long_4)
+                    .putLong(12, long_4)
                     .putLong(13, long_5)
                     .putPackable(14, d_category)
                     .putBooleanArray(15, bool_array)
@@ -119,12 +119,12 @@ public class PackVo {
                 d.int_1 = decoder.getInt(4);
                 d.int_2 = decoder.getInt(5);
                 d.int_3 = decoder.getInt(6);
-                d.int_4 = decoder.getSInt(7);
+                d.int_4 = decoder.getInt(7);
                 d.int_5 = decoder.getInt(8);
                 d.long_1 = decoder.getLong(9);
                 d.long_2 = decoder.getLong(10);
                 d.long_3 = decoder.getLong(11);
-                d.long_4 = decoder.getSLong(12);
+                d.long_4 = decoder.getLong(12);
                 d.long_5 = decoder.getLong(13);
                 d.d_category = decoder.getPackable(14, Category.CREATOR);
                 d.bool_array = decoder.getBooleanArray(15);

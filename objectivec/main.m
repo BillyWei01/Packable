@@ -1,8 +1,8 @@
 
 #import <Foundation/Foundation.h>
 
-#import "PackEncoder.h"
-#import "PackDecoder.h"
+#import "pack/PackEncoder.h"
+#import "pack/PackDecoder.h"
 #import "SampleVo.h"
 #import "PackVo.h"
 #include "Info.h"
@@ -94,11 +94,11 @@ int main(int argc, const char * argv[]) {
             
             PackEncoder *en = [[PackEncoder alloc]init];
             [en putPackableMutArray:0 withValue:arr];
-            [en putSInt:1 withValue:1234];
-            [en putSInt64:2 withValue:987654321];
+            [en putInt:1 withValue:1234];
+            [en putInt64:2 withValue:987654321];
             [en putFloat:3 withValue:3.14];
             double d =1.2345678901F;
-            [en putCDouble:4 withValue:d];
+            [en putDouble:4 withValue:d];
             [en putString:5 withValue:@"你好 haha!"];
             [en putStringNSArray:6 withValue:strArray];
             [en putFloatArray:7 withValue:floatArray count:3];
@@ -120,10 +120,10 @@ int main(int argc, const char * argv[]) {
             PackDecoder *de = [[PackDecoder alloc]initWithBytes:bs andOffset:0 andLen:c];
             //SampleVo* s1 = (SampleVo*)[de getPackable:0 withCreator:[SampleVoCreator getIntance]];
             NSMutableArray<SampleVo*>* a1 = [de getPackableArray:0 withCreator:[SampleVoCreator getIntance]];
-            int i1 = [de getSInt:1];
-            int64_t l1 = [de getSInt64:2];
+            int i1 = [de getInt:1];
+            int64_t l1 = [de getInt64:2];
             float f1 = [de getFloat:3];
-            double d1 = [de getCDouble:4];
+            double d1 = [de getDouble:4];
             NSString* str = [de getString:5];
             NSArray* strArr = [de getStringArray:6];
             int faCount;

@@ -34,14 +34,8 @@
 -(int)getInt:(int)index withDefault:(int)defValue;
 -(int)getInt:(int)index;
 
--(int)getSInt:(int)index withDefault:(int)defValue;
--(int)getSInt:(int)index;
-
 -(int64_t)getInt64:(int)index withDefault:(int64_t)defValue;
 -(int64_t)getInt64:(int)index;
-
--(int64_t)getSInt64:(int)index withDefault:(int64_t)defValue;
--(int64_t)getSInt64:(int)index;
 
 -(float)getFloat:(int)index withDefault:(float)defValue;
 -(float)getFloat:(int)index;
@@ -49,8 +43,6 @@
 -(double)getDouble:(int)index withDefault:(double)defValue;
 -(double)getDouble:(int)index;
 
--(double)getCDouble:(int)index withDefault:(double)defValue;
--(double)getCDouble:(int)index;
 
 -(NSString*)getString:(int)index withDefault:(NSString*)defValue;
 -(NSString*)getString:(int)index;

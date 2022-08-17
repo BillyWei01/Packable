@@ -242,26 +242,6 @@ namespace pack.packable
             return this;
         }
 
-        /*
-         * Put int value with zigzag encode. <p/>
-         * <p>
-         * Zigzag encoding equivalent to:  <br/>
-         * n = n >= 0 ? n * 2 : (-n) * 2 - 1;  <br/>
-         * Positive effect: <br/>
-         * Make little negative integer to be little positive integer. <br/>
-         * Side effect: <br/>
-         * Double positive integer, some times it makes integer to cost more space than before. <br/>
-         * For example: <br/>
-         * Numbers belong [128, 255], cost one byte, <br/>
-         * after zigzag encode, to [256, 510], cost two bytes. <p/>
-         * <p>
-         * So if the value is high probability to be little negative number, using zigzag encode could be helpful, <br/>
-         * otherwise just use {@link #putInt(int, int)} will be more effective. <br/>
-         */
-        public PackEncoder PutSInt(int index, int value)
-        {
-            return PutInt(index, (value << 1) ^ (value >> 31));
-        }
 
         public PackEncoder PutLong(int index, long value)
         {
@@ -299,14 +279,6 @@ namespace pack.packable
             return this;
         }
 
-        /*
-         * Put long value with zigzag encoding. <br/>
-         * See {@link #putSInt(int, int)}
-         */
-        public PackEncoder PutSLong(int index, long value)
-        {
-            return PutLong(index, (value << 1) ^ (value >> 63));
-        }
 
         public PackEncoder PutFloat(int index, float value)
         {
@@ -356,57 +328,6 @@ namespace pack.packable
             return this;
         }
 
-        /*
-         * Put double value in a compact way.<p/>
-         * <p>
-         * If the number in binary has few of '1' (significant bits), it can be compressed to two or four bytes. <br/>
-         * Double has 1 Sign bit, 11 exponent bits, and 52 significand bits. <br/>
-         * Because the significant bits always in high bit of significant part, <br/>
-         * and in most case exponent bits will not be all zeros, <br/>
-         * when significand bits is less than 4 bits, can compressed to 2 bytes, <br/>
-         * when significand bits is less than 20 bits,  can compressed to 4 bytes. <p/>
-         * <p>
-         * Normally, we could just focus on if the number is little integer (no fractional part), <br/>
-         * when the integer is less then 1 << 21 (about two million), the lowest 4 bytes of double value must be zero. <br/>
-         * We can use this to save four bytes. <br/>
-         * For efficiency, we handle the 4 significand bits case as same as 20 significand bits case.<p/>
-         * <p>
-         * See {@link PackDecoder#getCDouble(int, double)} to decoding part.
-         */
-        public PackEncoder PutCDouble(int index, double value)
-        {
-            CheckIndex(index);
-            CheckCapacity(10);
-            if (value == 0D)
-            {
-                PutIndex(index);
-            }
-            else
-            {
-                int pos = buffer.position;
-                PutIndex(index);
-
-                ulong i;
-                unsafe
-                {
-                    i = *(ulong*)&value;
-
-                }
-                // To reuse the decode process (padding zero at high bytes),
-                // we need to reverse the double value
-                if ((i << 32) == 0uL)
-                {
-                    buffer.hb[pos] |= TagFormat.TYPE_NUM_32;
-                    buffer.WriteInt((int)(i >> 32));
-                }
-                else
-                {
-                    buffer.hb[pos] |= TagFormat.TYPE_NUM_64;
-                    buffer.WriteLong((long)((i >> 32) | (i << 32)));
-                }
-            }
-            return this;
-        }
 
         public PackEncoder PutString(int index, string value)
         {

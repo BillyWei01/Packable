@@ -36,22 +36,16 @@ void testEncodeAndDecode() {
                 buffer2 = PackEncoder::marshal(response, count);
                 clock_t t3 = clock();
                 int equal = length == count && memcmp(buffer, buffer2, length) == 0;
-                clock_t t4 = clock();
                 delete response;
-                clock_t t5 = clock();
                 if (buffer2 != nullptr) {
                     delete[] buffer2;
                 }
-                clock_t t6 = clock();
+    
                 if (!equal) {
                     printf("count:%d  equal:%d\n", count, equal);
                 }
 
-                printf("decode:%ld,  encode:%ld, del response:%ld, del buffer:%ld\n",
-                       (t2 - t1) / 1000,
-                       (t3 - t2) / 1000,
-                       (t5 - t4) / 1000,
-                       (t6 - t5) / 1000);
+                printf("decode:%ld,  encode:%ld\n", (t2 - t1) / 1000, (t3 - t2) / 1000);
             }
             delete[] buffer;
         } catch (const char *msg) {

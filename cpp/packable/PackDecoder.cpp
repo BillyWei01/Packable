@@ -186,19 +186,6 @@ int PackDecoder::getInt(int index) {
     return getInt(index, 0);
 }
 
-int PackDecoder::getSInt(int index, int defValue) {
-    int64_t info = getInfo(index);
-    if (info == NULL_FLAG) {
-        return defValue;
-    }
-    auto n = (int32_t) info;
-    return (((uint32_t) n) >> 1) ^ -(n & 1);
-}
-
-int PackDecoder::getSInt(int index) {
-    return getSInt(index, 0);
-}
-
 int64_t PackDecoder::getInt64(int index, int64_t defValue) {
     int64_t info = getInfo(index);
     if (info == NULL_FLAG) {
@@ -209,19 +196,6 @@ int64_t PackDecoder::getInt64(int index, int64_t defValue) {
 
 int64_t PackDecoder::getInt64(int index) {
     return getInt64(index, 0);
-}
-
-int64_t PackDecoder::getSInt64(int index, int64_t defValue) {
-    int64_t info = getInfo(index);
-    if (info == NULL_FLAG) {
-        return defValue;
-    }
-    int64_t n = info >= 0 ? info : buffer.readInt64((int) (info & INT_MASK));
-    return (((uint64_t) n) >> 1) ^ -(n & 1);
-}
-
-int64_t PackDecoder::getSInt64(int index) {
-    return getSInt64(index, 0);
 }
 
 float PackDecoder::getFloat(int index, float defValue) {
@@ -248,20 +222,6 @@ double PackDecoder::getDouble(int index, double defValue) {
 
 double PackDecoder::getDouble(int index) {
     return getDouble(index, 0);
-}
-
-double PackDecoder::getCDouble(int index, double defValue) {
-    int64_t info = getInfo(index);
-    if (info == NULL_FLAG) {
-        return defValue;
-    }
-    uint64_t x = info >= 0 ? info : buffer.readInt64((int) (info & INT_MASK));
-    uint64_t y = (x << 32) | (x >> 32);
-    return *((double *) &y);
-}
-
-double PackDecoder::getCDouble(int index) {
-    return getCDouble(index, 0);
 }
 
 string PackDecoder::getString(int index) {

@@ -193,28 +193,6 @@ public final class PackEncoder {
         return this;
     }
 
-    /**
-     * Put int value with zigzag encoding.
-     *
-     * Zigzag encoding equivalent to:<br>
-     * n = if(n is not negative) n * 2  else (-n) * 2 - 1; <br>
-     * Positive effect:<br>
-     * Make little negative integer to be little positive integer.<br>
-     * Side effect: <br>
-     * Double positive integer, some times it makes integer to cost more space than before. <br>
-     * For example: <br>
-     * Numbers belong [128, 255], cost one byte,
-     * after zigzag encode, to [256, 510], cost two bytes.  <br>
-     *
-     * So if the value is high probability to be little negative number, using zigzag encoding could be helpful,
-     * otherwise just use {@link #putInt(int, int)} will be more effective.
-     * 
-     * @see PackDecoder#getSInt(int, int)
-     */
-    public PackEncoder putSInt(int index, int value) {
-        return putInt(index, (value << 1) ^ (value >> 31));
-    }
-
     public PackEncoder putLong(int index, long value) {
         checkCapacity(10);
         if (value == 0L) {
@@ -237,15 +215,6 @@ public final class PackEncoder {
             }
         }
         return this;
-    }
-
-    /**
-     * Put long value with zigzag encode.
-     *
-     * @see #putSInt(int, int)
-     */
-    public PackEncoder putSLong(int index, long value) {
-        return putLong(index, (value << 1) ^ (value >> 63));
     }
 
     public PackEncoder putFloat(int index, float value) {
@@ -280,57 +249,8 @@ public final class PackEncoder {
         return this;
     }
 
-    /**
-     * Put double value in a compact way.  <br>
-     *
-     * If the number in binary has few of '1' (significant bits), it can be compressed to two or four bytes.
-     * Double has 1 Sign bit, 11 exponent bits, and 52 significand bits.
-     * Because the significant bits always in high bit of significant part,
-     * and in most case exponent bits will not be all zeros,
-     * when significand bits is less than 4 bits, can compressed to 2 bytes,
-     * when significand bits is less than 20 bits,  can compressed to 4 bytes.   <br>
-     *
-     * Normally, we could just focus on if the number is little integer (no fractional part),
-     * when the integer is less then 2^20 (about two million), the lowest 4 bytes of double value must be zero.
-     * We can use this to save four bytes.
-     * For efficiency, we handle the 4 significand bits case as same as 20 significand bits case.
-     *
-     * See {@link PackDecoder#getCDouble(int, double)} to decoding part.
-     */
-    public PackEncoder putCDouble(int index, double value) {
-        checkCapacity(10);
-        if (value == 0D) {
-            putIndex(index);
-        } else {
-            int pos = buffer.position;
-            putIndex(index);
-            long i = Double.doubleToRawLongBits(value);
-            // To reuse the decode process (padding zero at high bytes),
-            // we need to reverse the double value
-            long i32 = i << 32;
-            if (i32 == 0L) {
-                buffer.hb[pos] |= TagFormat.TYPE_NUM_32;
-                buffer.writeInt((int) (i >>> 32));
-            } else {
-                buffer.hb[pos] |= TagFormat.TYPE_NUM_64;
-                buffer.writeLong((i >>> 32) | i32);
-            }
-        }
-        return this;
-    }
-
     public PackEncoder putString(int index, String value) {
-/*        if (value == null) {
-            return this;
-        }
-        if (value.isEmpty()) {
-            checkCapacity(2);
-            putIndex(index);
-            return this;
-        }
-        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
-        wrapTagAndLength(index, bytes.length);
-        buffer.writeBytes(bytes);*/
+
         if (value == null) {
             return this;
         }
@@ -352,7 +272,6 @@ public final class PackEncoder {
             encodeStr(value);
             buffer.hb[pos] = (byte) (buffer.position - pos - 1);
         } else {
-            //
             if (allASCII && !isAllASCII(value)) {
                 allASCII = false;
             }

@@ -222,19 +222,6 @@ static const uint64_t INT_MASK = 0xffffffffL;
     return [self getInt:index withDefault:0];
 }
 
--(int)getSInt:(int)index withDefault:(int)defValue{
-    uint64_t info = [self getInfo:index];
-    if(info == NULL_FLAG){
-        return defValue;
-    }
-    int n = (int)info;
-    return (((uint32_t)n) >> 1)^-(n&1);
-}
-
--(int)getSInt:(int)index{
-    return [self getSInt:index withDefault:0];
-}
-
 -(int64_t)getInt64:(int)index withDefault:(int64_t)defValue{
     uint64_t info = [self getInfo:index];
     if(info == NULL_FLAG){
@@ -245,19 +232,6 @@ static const uint64_t INT_MASK = 0xffffffffL;
 
 -(int64_t)getInt64:(int)index{
     return [self getInt64:index withDefault:0];
-}
-
--(int64_t)getSInt64:(int)index withDefault:(int64_t)defValue{
-    uint64_t info = [self getInfo:index];
-    if(info == NULL_FLAG){
-        return defValue;
-    }
-    int64_t n = info < INT_64_MIN_VALUE ? info : [buffer readInt64:(int)(info & INT_MASK)];
-    return (((uint64_t) n) >> 1) ^ -(n & 1);
-}
-
--(int64_t)getSInt64:(int)index{
-    return [self getSInt64:index withDefault:0];
 }
 
 -(float)getFloat:(int)index withDefault:(float)defValue{
@@ -284,21 +258,6 @@ static const uint64_t INT_MASK = 0xffffffffL;
 
 -(double)getDouble:(int)index {
     return [self getDouble:index withDefault:0];
-}
-
-
--(double)getCDouble:(int)index withDefault:(double)defValue{
-    uint64_t info = [self getInfo:index];
-    if(info == NULL_FLAG){
-        return defValue;
-    }
-    uint64_t x = info < INT_64_MIN_VALUE ? info : [buffer readInt64:(int)(info & INT_MASK)];
-    uint64_t y = (x << 32) | (x >> 32);
-    return *((double *) &y);
-}
-
--(double)getCDouble:(int)index{
-    return [self getCDouble:index withDefault:0];
 }
 
 -(NSString*)getString:(int)index withDefault:(NSString*)defValue{

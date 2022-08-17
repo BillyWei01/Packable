@@ -66,17 +66,11 @@ public:
 
     PackEncoder &putInt(uint8_t index, int value);
 
-    PackEncoder &putSInt(uint8_t index, int value);
-
     PackEncoder &putInt64(uint8_t index, int64_t value);
-
-    PackEncoder &putSInt64(uint8_t index, int64_t value);
 
     PackEncoder &putFloat(uint8_t index, float value);
 
     PackEncoder &putDouble(uint8_t index, double value);
-
-    PackEncoder &putCDouble(uint8_t index, double value);
 
     PackEncoder &putString(uint8_t index, string *value);
 

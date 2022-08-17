@@ -139,26 +139,6 @@ PackEncoder &PackEncoder::putInt(uint8_t index, int value) {
     return *this;
 }
 
-/*
- * Put int value with zigzag encoding.
- *
- * Zigzag encoding equivalent to:
- * n = n >= 0 ? n * 2 : (-n) * 2 - 1;
- * Positive effect:
- * Make little negative integer to be little positive integer.
- * Side effect:
- * Double positive integer, some times it makes integer to cost more space than before.
- * For example:
- * Numbers belong [128, 255], cost one byte,
- * after zigzag encode, to [256, 510], cost two bytes.
- *
- * So if the value is high probability to be little negative number, using zigzag encoding could be helpful,
- * otherwise just use putInt(int, int) will be more effective.
- */
-PackEncoder &PackEncoder::putSInt(uint8_t index, int value) {
-    return putInt(index, (value << 1) ^ (value >> 31));
-}
-
 PackEncoder &PackEncoder::putInt64(uint8_t index, int64_t value) {
     checkCapacity(10);
     if (value == 0) {
@@ -183,9 +163,6 @@ PackEncoder &PackEncoder::putInt64(uint8_t index, int64_t value) {
     return *this;
 }
 
-PackEncoder &PackEncoder::putSInt64(uint8_t index, int64_t value) {
-    return putInt64(index, (value << 1) ^ (value >> 63));
-}
 
 PackEncoder &PackEncoder::putFloat(uint8_t index, float value) {
     checkCapacity(6);
@@ -215,43 +192,6 @@ PackEncoder &PackEncoder::putDouble(uint8_t index, double value) {
             buffer.writeByte((char) index);
         }
         buffer.writeDouble(value);
-    }
-    return *this;
-}
-
-/*
- * Put double value in compact way.
- *
- * If the number in binary has few of '1' (significant bits), it can be compressed to two or four bytes,
- * because the significant bits always in highest bit of double.
- * For example,
- * integers less than 1<<21 (two million) can be compressed to four bytes,
- * integers less than 1<<5 (32) can be compressed to two bytes.
- * Besides, some other integer has few of significant bits also can be well compressed,
- * like 1/4 (0.25), 1/2 (0.5), 1+1/2 (1.5), ...
- *
- * Normally, we could just focus on if the number is little integer (less then two million)
- * For efficiency (time/space balance), we just compressed to 4 bytes (if it could),
- * even the number has two significant bytes.
- */
-PackEncoder &PackEncoder::putCDouble(uint8_t index, double value) {
-    checkCapacity(10);
-    if (value == 0) {
-        putIndex(index);
-    } else {
-        int pos = buffer.position;
-        putIndex(index);
-        uint64_t i = *((uint64_t *) &value);
-        // To reuse the decode process (padding zero at high bytes),
-        // we need to reverse the double value
-        uint64_t i32 = i << 32;
-        if (i32 == 0L) {
-            buffer.hb[pos] |= TYPE_NUM_32;
-            buffer.writeInt(i >> 32);
-        } else {
-            buffer.hb[pos] |= TYPE_NUM_64;
-            buffer.writeInt64((i >> 32) | i32);
-        }
     }
     return *this;
 }

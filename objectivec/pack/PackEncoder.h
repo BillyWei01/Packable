@@ -32,17 +32,11 @@
 
 -(void)putInt:(uint8)index withValue:(int)value;
 
--(void)putSInt:(uint8)index withValue:(int)value;
-
 -(void)putInt64:(uint8)index withValue:(int64_t)value;
-
--(void)putSInt64:(uint8)index withValue:(int64_t)value;
 
 -(void)putFloat:(uint8)index withValue:(float)value;
 
 -(void)putDouble:(uint8)index withValue:(double)value;
-
--(void)putCDouble:(uint8)index withValue:(double)value;
 
 -(void)putString:(uint8)index withValue:(NSString*)value;
 

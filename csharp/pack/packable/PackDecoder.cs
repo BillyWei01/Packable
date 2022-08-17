@@ -354,25 +354,6 @@ namespace pack.packable
             return info == NULL_FLAG ? 0 : (int)info;
         }
 
-        /**
-         * Get integer with zigzag decode.
-         * See {@link PackEncoder#putSInt(int, int)}
-         */
-        public int GetSInt(int index, int defValue)
-        {
-            ulong info = GetInfo(index);
-            if (info == NULL_FLAG)
-            {
-                return defValue;
-            }
-            int n = (int)info;
-            return (int)((uint)n >> 1) ^ -(n & 1);
-        }
-
-        public int GetSInt(int index)
-        {
-            return GetSInt(index, 0);
-        }
 
         public long GetLong(int index, long defValue)
         {
@@ -387,26 +368,6 @@ namespace pack.packable
         public long GetLong(int index)
         {
             return GetLong(index, 0L);
-        }
-
-        /**
-         * Get long value with zigzag decode.
-         * See {@link PackEncoder#putSInt(int, int)}
-         */
-        public long GetSLong(int index, long defValue)
-        {
-            ulong info = GetInfo(index);
-            if (info == NULL_FLAG)
-            {
-                return defValue;
-            }
-            long n = info < INT_64_MIN_VALUE ? (long)info : buffer.ReadLong((int)(info & INT_MASK));
-            return ((long)((ulong)n >> 1)) ^ -(n & 1);
-        }
-
-        public long GetSLong(int index)
-        {
-            return GetSLong(index, 0L);
         }
 
         public float GetFloat(int index, float defValue)
@@ -450,28 +411,6 @@ namespace pack.packable
             return GetDouble(index, 0D);
         }
 
-        /*
-         * See {@link PackEncoder#putCDouble(int, double)} for encoding part
-         */
-        public double GetCDouble(int index, double defValue)
-        {
-            ulong info = GetInfo(index);
-            if (info == NULL_FLAG)
-            {
-                return defValue;
-            }
-            ulong x = info < INT_64_MIN_VALUE ? info : (ulong)buffer.ReadLong((int)(info & INT_MASK));
-            ulong y = (x << 32) | (x >> 32);
-            unsafe
-            {
-                return *(double*)&y;
-            }
-        }
-
-        public double GetCDouble(int index)
-        {
-            return GetCDouble(index, 0D);
-        }
 
         public string GetString(int index, string defValue)
         {

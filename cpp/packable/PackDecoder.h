@@ -49,10 +49,6 @@ public:
 
     int getInt(int index);
 
-    int getSInt(int index, int defValue);
-
-    int getSInt(int index);
-
     float getFloat(int index, float defValue);
 
     float getFloat(int index);
@@ -61,17 +57,9 @@ public:
 
     int64_t getInt64(int index);
 
-    int64_t getSInt64(int index, int64_t defValue);
-
-    int64_t getSInt64(int index);
-
     double getDouble(int index, double defValue);
 
     double getDouble(int index);
-
-    double getCDouble(int index, double defValue);
-
-    double getCDouble(int index);
 
     string getString(int index);
 
