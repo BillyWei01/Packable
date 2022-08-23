@@ -8,13 +8,12 @@ It has been implemented multiple languages , it's effective and easy to use. <br
 It can be used for object serialization/deserialization and message pack up, to storage or RPC.
 
 Packable has the following advantages:
-1. Fast encoding/decoding
-2. Compact coding and small size
-3. Easy to use,  flexible
-4. The code is light
-5. Support multiple types
-6. Support multiple compression strategies
-7. Supports multiple languages and cross-platforms
+1. Fast encoding/decoding.
+2. Encoded message is compact (with small size).
+3. Easy to use.
+4. The code is light.
+5. Support multiple types and compression strategies.
+6. Supports multiple languages and cross-platforms.
 
 Packable currently implements version of Java, C++, C#, Objective-C, Go.
 
@@ -51,8 +50,7 @@ static class Data implements Packable {
 
     @Override
     public void encode(PackEncoder encoder) {
-        encoder.putString(0, msg)
-                .putPackableArray(1, items);
+        encoder.putString(0, msg).putPackableArray(1, items);
     }
 
     public static final PackCreator<Data> CREATOR = decoder -> {
