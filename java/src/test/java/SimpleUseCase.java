@@ -106,14 +106,13 @@ public class SimpleUseCase {
         encoder.putInt(0, a)
                 .putString(63+3, msg)
                 .putInt(2, b);
-        byte[] bytes = encoder.getBytes();
+        byte[] bytes = encoder.toBytes();
 
         PackDecoder decoder2 = PackDecoder.newInstance(bytes);
         int dA = decoder2.getInt(0);
         String dMsg = decoder2.getString(63+3);
         int dB = decoder2.getInt(2);
         String emptyMsg = decoder2.getString(3);
-        decoder2.recycle();
 
         boolean equal = msg.equals(dMsg) && (a == dA) && (b == dB);
         Assert.assertTrue(equal);

@@ -8,15 +8,16 @@ import java.util.LinkedList;
  * ByteArrayPool for {@link PackEncoder}
  */
 class ByteArrayPool {
-    // max array size: 1G
-    private static final int MAX_ARRAY_SHIFT = 30;
-
     // default array size : 4K
     private static final int DEFAULT_ARRAY_LEN_SHIFT = 12;
     static final int DEFAULT_ARRAY_SIZE = 1 << DEFAULT_ARRAY_LEN_SHIFT;
     private static final int DEFAULT_CAPACITY = 10;
     private static int defaultCount = 0;
     private static final byte[][] defaultArrays = new byte[DEFAULT_CAPACITY][];
+
+    // max array size: 64M
+    private static final int MAX_ARRAY_SHIFT = 26;
+    private static final int MAX_ARRAY_SIZE  = 1 << MAX_ARRAY_SHIFT;
 
     private static final int TEMP_ARRAYS_CAPACITY = MAX_ARRAY_SHIFT - DEFAULT_ARRAY_LEN_SHIFT;
     @SuppressWarnings("unchecked")
@@ -29,9 +30,11 @@ class ByteArrayPool {
 
         if (len <= DEFAULT_ARRAY_SIZE) {
             return getDefaultArray();
-        } else {
-            return getTempArray(getIndex(len));
         }
+        if (len > MAX_ARRAY_SIZE) {
+            return new byte[len];
+        }
+        return getTempArray(getIndex(len));
     }
 
     private static int getIndex(int len) {
@@ -54,7 +57,7 @@ class ByteArrayPool {
         int len = bytes.length;
         if (len == DEFAULT_ARRAY_SIZE) {
             recycleDefaultArray(bytes);
-        } else if (len > DEFAULT_ARRAY_SIZE) {
+        } else if (len > DEFAULT_ARRAY_SIZE && len <= MAX_ARRAY_SIZE) {
             int index = getIndex(len);
             int capacity = 1 << (index + DEFAULT_ARRAY_LEN_SHIFT);
             if (len == capacity) {

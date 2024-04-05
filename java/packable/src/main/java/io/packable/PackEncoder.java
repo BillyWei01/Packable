@@ -32,7 +32,7 @@ public final class PackEncoder {
     public static byte[] marshal(Packable packable, int budgetSize) {
         PackEncoder encoder = new PackEncoder(budgetSize);
         packable.encode(encoder);
-        return encoder.getBytes();
+        return encoder.toBytes();
     }
 
     /**
@@ -41,43 +41,14 @@ public final class PackEncoder {
      *
      * @return bytes
      */
-    public byte[] getBytes() {
+    public byte[] toBytes() {
         checkBufferState();
         byte[] bytes = Arrays.copyOf(buffer.hb, buffer.position);
         recycle();
         return bytes;
     }
 
-    public static class Result {
-        public final byte[] bytes;
-        public final int length;
-
-        Result(byte[] b, int pos) {
-            bytes = b;
-            length = pos;
-        }
-    }
-
-    /**
-     * Use this function could read result bytes directly,
-     * less memory allocate and copy compare with {@link #getBytes()}.
-     *
-     * @return Result
-     */
-    public Result getResult() {
-        checkBufferState();
-        return new Result(buffer.hb, buffer.position);
-    }
-
-    /**
-     * Set buffer position to 0, to reuse PackEncoder
-     */
-    public void clear() {
-        checkBufferState();
-        buffer.position = 0;
-    }
-
-    public void recycle() {
+    private void recycle() {
         ByteArrayPool.recycleArray(buffer.hb);
         buffer.hb = null;
     }
@@ -86,10 +57,6 @@ public final class PackEncoder {
         if (buffer.hb == null) {
             throw new IllegalStateException("Encoder had been recycled");
         }
-    }
-
-    EncodeBuffer getBuffer() {
-        return buffer;
     }
 
     void checkCapacity(int expandSize) {
@@ -131,7 +98,7 @@ public final class PackEncoder {
         }
     }
 
-    final void putIndex(int index) {
+    private void putIndex(int index) {
         if (index >= TagFormat.LITTLE_INDEX_BOUND) {
             buffer.writeByte(TagFormat.BIG_INDEX_MASK);
         }
@@ -276,6 +243,7 @@ public final class PackEncoder {
             encodeStr(value);
             buffer.hb[pos] = (byte) (buffer.position - pos - 1);
         } else {
+            // to-do change to isLatin, use reflection
             if (allASCII && !isAllASCII(value)) {
                 allASCII = false;
             }
@@ -423,7 +391,7 @@ public final class PackEncoder {
     }
 
     /**
-     * Wrap a object (implement Packable) to buffer, used in array or container.
+     * Wrap an object  to buffer, used in array or container.
      * <p>
      * When in {@link #putPackable}, we have tag to mark size of 'len',
      * but int array or container, we have to mark size by self.  <br>
@@ -741,30 +709,41 @@ public final class PackEncoder {
     }
 
     public PackEncoder putBooleanArray(int index, boolean[] value) {
-        CompactCoder.putBooleanArray(this, index, value);
-        return this;
-    }
+        if (value == null) return this;
+        int n = value.length;
+        if (n == 0) {
+            wrapTagAndLength(index, 0);
+            return this;
+        }
 
-    /**
-     * If many elements of array are many 0 or little integer,
-     * use this method could save space.
-     *
-     * @param index index of key
-     * @param value int array
-     * @return PackEncoder
-     */
-    public PackEncoder putCompactIntArray(int index, int[] value) {
-        CompactCoder.putIntArray(this, index, value);
-        return this;
-    }
-
-    public PackEncoder putCompactLongArray(int index, long[] value) {
-        CompactCoder.putLongArray(this, index, value);
-        return this;
-    }
-
-    public PackEncoder putCompactDoubleArray(int index, double[] value) {
-        CompactCoder.putDoubleArray(this, index, value);
+        if (n <= 5) {
+            byte b = (byte) (n << 5);
+            for (int i = 0; i < n; i++) {
+                if (value[i]) {
+                    b |= 1 << i;
+                }
+            }
+            wrapTagAndLength(index, 1);
+            buffer.writeByte(b);
+        } else {
+            int remain = n & 0x7;
+            int byteCount = (n >> 3) + (remain == 0 ? 1 : 2);
+            wrapTagAndLength(index, byteCount);
+            buffer.writeByte((byte) remain);
+            int i = 0;
+            while (i < n) {
+                int end = Math.min(i + 8, n);
+                byte b = 0;
+                for (int j = i; j < end; j++) {
+                    if (value[j]) {
+                        b |= 1 << (j & 0x7);
+                    }
+                }
+                buffer.writeByte(b);
+                i = end;
+            }
+        }
         return this;
     }
 }
+

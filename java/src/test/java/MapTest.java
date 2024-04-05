@@ -17,7 +17,7 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putStr2Str(0, a).getBytes();
+        byte[] bytes = encoder.putStr2Str(0, a).toBytes();
 
         PackDecoder decoder = PackDecoder.newInstance(bytes);
         Map<String, String> b = decoder.getStr2Str(0);
@@ -34,11 +34,10 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putStr2Pack(0, a).getBytes();
+        byte[] bytes = encoder.putStr2Pack(0, a).toBytes();
 
         PackDecoder decoder = PackDecoder.newInstance(bytes);
         Map<String, TestVo> b = decoder.getStr2Pack(0, TestVo.CREATOR);
-        decoder.recycle();
 
         Assert.assertEquals(a, b);
 }
@@ -58,7 +57,7 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putStr2Number(0, a).getBytes();
+        byte[] bytes = encoder.putStr2Number(0, a).toBytes();
 
         PackDecoder decoder = PackDecoder.newInstance(bytes);
         Map<String, Integer> b = decoder.getStr2Int(0);
@@ -73,7 +72,7 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putStr2Number(0, a).getBytes();
+        byte[] bytes = encoder.putStr2Number(0, a).toBytes();
 
         PackDecoder decoder = PackDecoder.newInstance(bytes);
         Map<String, Long> b = decoder.getStr2Long(0);
@@ -88,7 +87,7 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putStr2Number(0, a).getBytes();
+        byte[] bytes = encoder.putStr2Number(0, a).toBytes();
 
         PackDecoder decoder = PackDecoder.newInstance(bytes);
         Map<String, Float> b = decoder.getStr2Float(0);
@@ -103,7 +102,7 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putStr2Number(0, a).getBytes();
+        byte[] bytes = encoder.putStr2Number(0, a).toBytes();
 
         PackDecoder decoder = PackDecoder.newInstance(bytes);
         Map<String, Double> b = decoder.getStr2Double(0);
@@ -119,7 +118,7 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putInt2Int(0, a).getBytes();
+        byte[] bytes = encoder.putInt2Int(0, a).toBytes();
 
         PackDecoder decoder = PackDecoder.newInstance(bytes);
         Map<Integer, Integer> b = decoder.getInt2Int(0);
@@ -135,7 +134,7 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putInt2Str(0, a).getBytes();
+        byte[] bytes = encoder.putInt2Str(0, a).toBytes();
 
         PackDecoder decoder = PackDecoder.newInstance(bytes);
         Map<Integer, String> b = decoder.getInt2Str(0);

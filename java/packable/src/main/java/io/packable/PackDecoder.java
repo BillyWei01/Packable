@@ -8,9 +8,6 @@ import java.util.Map;
 
 /**
  * PackDecoder, to decode bytes data to target object.
- * <p>
- * After getting all values,
- * it's recommended to call {@link #recycle()} to recycle objects.
  */
 public final class PackDecoder {
     static final long NULL_FLAG = ~0;
@@ -107,25 +104,16 @@ public final class PackDecoder {
     private PackDecoder() {
     }
 
-    DecodeBuffer getBuffer() {
-        return buffer;
-    }
-
-    public void recycle() {
+    private void recycle() {
         if (pool == null) {
             return;
         }
-        if (this.buffer == pool.buffer) {
-            // current decoder is root decoder
-            CharArrayPool.recycleArray(pool.charBuffer);
-            LongArrayPool.recycleArray(this.infoArray);
-            pool.releaseDecoders();
-            pool = null;
-            buffer = null;
-            maxIndex = -1;
-        } else {
-            pool.recycleDecoder(this);
-        }
+        CharArrayPool.recycleArray(pool.charBuffer);
+        LongArrayPool.recycleArray(this.infoArray);
+        pool.releaseDecoders();
+        pool = null;
+        buffer = null;
+        maxIndex = -1;
     }
 
     private void parseBuffer() {
@@ -247,7 +235,7 @@ public final class PackDecoder {
         return pool.charBuffer;
     }
 
-    long getInfo(int index) {
+    private long getInfo(int index) {
         if (maxIndex < 0) {
             if (buffer == null) {
                 throw new IllegalStateException("Decoder had been recycled");
@@ -409,7 +397,7 @@ public final class PackDecoder {
         int len = (int) (info & INT_MASK);
         PackDecoder decoder = pool.getDecoder(offset, len);
         T object = creator.decode(decoder);
-        decoder.recycle();
+        pool.recycleDecoder(decoder);
         return object;
     }
 
@@ -532,80 +520,10 @@ public final class PackDecoder {
             buffer.checkBound(offset, len);
             PackDecoder decoder = pool.getDecoder(offset, len);
             t = creator.decode(decoder);
-            decoder.recycle();
+            pool.recycleDecoder(decoder);
             buffer.position += len;
         }
         return t;
-    }
-
-    /**
-     * To reuse memory, it's highly recommended calling {@link PackDecoder#recycle()} after reading data.
-     * @param index index of value.
-     * @return the PackDecoder.
-     */
-    public PackDecoder getDecoder(int index) {
-        long info = getInfo(index);
-        if (info == NULL_FLAG) {
-            return null;
-        }
-        int offset = (int) (info >>> 32);
-        int len = (int) (info & INT_MASK);
-        return pool.getDecoder(offset, len);
-    }
-
-    public final class DecoderArray {
-        private final int count;
-        private int index = 0;
-        private PackDecoder decoder = null;
-
-        private DecoderArray(int n) {
-            count = n;
-        }
-
-        public int getCount() {
-            return count;
-        }
-
-        public boolean hasNext() {
-            if (index < count) {
-                return true;
-            } else {
-                if (decoder != null) {
-                    decoder.recycle();
-                }
-                return false;
-            }
-        }
-
-        public PackDecoder next() {
-            if (index >= count) {
-                return null;
-            }
-            index++;
-            short a = buffer.readShort();
-            if (a == PackConfig.NULL_PACKABLE) {
-                return null;
-            } else {
-                int len = a >= 0 ? a : ((a & 0x7fff) << 16) | (buffer.readShort() & 0xffff);
-                int offset = buffer.position;
-                buffer.checkBound(offset, len);
-                if (decoder == null) {
-                    decoder = pool.getDecoder(offset, len);
-                } else {
-                    decoder.buffer.position = offset;
-                    decoder.buffer.limit = offset + len;
-                    decoder.maxIndex = -1;
-                }
-                buffer.position += len;
-                return decoder;
-            }
-        }
-    }
-
-    public DecoderArray getDecoderArray(int index) {
-        int n = getSize(index);
-        if (n < 0) return null;
-        return new DecoderArray(n);
     }
 
     public List<Integer> getIntList(int index) {
@@ -773,18 +691,43 @@ public final class PackDecoder {
     }
 
     public boolean[] getBooleanArray(int index) {
-        return CompactCoder.getBooleanArray(this, index);
-    }
+        long info = getInfo(index);
+        if (info == PackDecoder.NULL_FLAG) {
+            return null;
+        }
+        int len = (int) (info & PackDecoder.INT_MASK);
+        if (len == 0) {
+            return new boolean[0];
+        }
 
-    public int[] getCompactIntArray(int index) {
-        return CompactCoder.getIntArray(this, index);
-    }
-
-    public long[] getCompactLongArray(int index) {
-        return CompactCoder.getLongArray(this, index);
-    }
-
-    public double[] getCompactDoubleArray(int index) {
-        return CompactCoder.getDoubleArray(this, index);
+        buffer.position = (int) (info >>> 32);
+        boolean[] a;
+        if (len == 1) {
+            byte b = buffer.readByte();
+            int n = (b & 0xFF) >>> 5;
+            a = new boolean[n];
+            for (int i = 0; i < n; i++) {
+                a[i] = (b & 0x1) != 0;
+                b >>= 1;
+            }
+        } else {
+            int remain = buffer.readByte();
+            if ((remain >> 3) != 0) {
+                throw new IllegalStateException("remain overflow");
+            }
+            int byteCount = len - 1;
+            int n = (byteCount << 3) - (remain > 0 ? 8 - remain : 0);
+            a = new boolean[n];
+            for (int i = 0; i < n; i += 8) {
+                int b = buffer.readByte() & 0xFF;
+                int j = i;
+                while (b != 0) {
+                    a[j++] = (b & 0x1) != 0;
+                    b >>= 1;
+                }
+            }
+        }
+        return a;
     }
 }
+
