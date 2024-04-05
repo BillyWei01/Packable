@@ -1,33 +1,32 @@
 # Packbele
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.billywei01/packable)](https://search.maven.org/artifact/io.github.billywei01/packable) | [中文文档](README_CN.md)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.billywei01/packable)](https://search.maven.org/artifact/io.github.billywei01/packable) | [English](README_EN.md)
 
-## 1. Overview
-Packable is a well-designed serialization framework.  <br>
-It has been implemented multiple languages , it's effective and easy to use. <br>
-It can be used for object serialization/deserialization and message pack up, to storage or RPC.
+## 1.  概述
+Packable是一个高效易用的序列化框架。<br>
+可以用于对象序列化/反序列化，消息封装等，从而方便本地存储或网络传输。
 
-Packable has the following advantages:
-1. Fast encoding/decoding.
-2. Encoded message is compact (with small size).
-3. Easy to use.
-4. The code is light.
-5. Support multiple types and compression strategies.
-6. Supports multiple languages and cross-platforms.
+Packable有以下优点：
+- 1、编码/解码快速
+- 2、编码紧凑，体积小
+- 3、使用方便, 方法灵活
+- 4、代码轻量
+- 5、支持多种类型和压缩策略
+- 6、支持多种语言，可跨平台传输
 
-Packable currently implements version of Java, C++, C#, Objective-C, Go.
+Packable目前实现了Java、C++、C#、Objective-C、Go等版本。
 
-## 2. Example
-Here is usage of Java version,  and APIs on other platform are similar to Java.
+## 2. 使用方法
+以下以JAVA平台的用法举例，其他平台用法类似。
 
-The jar has been published to Maven Central：
+Java代码已发布到Maven仓库，路径如下：
 ```gradle
 dependencies {
     implementation 'io.github.billywei01:packable:1.1.0'
 }
 ```
 
-Suppose there are two objects like this:
+假设有下面这样的两个对象：
 
 ```java
 class Data {
@@ -41,7 +40,8 @@ class Item {
 }
 ```
 
-### 2.1 General usage
+### 2.1 常规用法
+序列化/反序列化用例如下：
 
 ```java
 static class Data implements Packable {
@@ -50,7 +50,8 @@ static class Data implements Packable {
 
     @Override
     public void encode(PackEncoder encoder) {
-        encoder.putString(0, msg).putPackableArray(1, items);
+        encoder.putString(0, msg)
+                .putPackableArray(1, items);
     }
 
     public static final PackCreator<Data> CREATOR = decoder -> {
@@ -94,30 +95,32 @@ static class Item implements Packable {
 
 static void test() {
     Data data = new Data();
-    
+    // 序列化
     byte[] bytes = PackEncoder.marshal(data);
-   
+    // 反序列化
     Data data_2 = PackDecoder.unmarshal(bytes, Data.CREATOR);
 }
+
 ```
 
-#### Serialization
-1. Implements the interface **Packable** <br>
-2. Implement the "encode()" method,  to encode each field (PackEncoder provides various types of API) <br>
-3. Call the PackEncoder.marshal() method, transfer the object, and get the byte array.
+#### 序列化
+- 1、声明 implements Packable 接口；<br>
+- 2、实现encode()方法，编码各个字段（PackEncoder提供了各种类型的API）；<br>
+- 3、调用PackEncoder.marshal()方法，传入对象， 得到字节数组。
 
-#### Deserialization
-1. Create a static object, which is an instance of PackCreator<br>
-2. Implement the "decode()" method, decode each field, and assign them to the object;<br>
-3. Call PackDecoder.unmarshal(), transfer the byte array and PackCreator instance.
+#### 反序列化
+- 1、创建一个静态对象，该对象为PackCreator的实例；<br>
+- 2、实现decode()方法，解码各个字段，赋值给对象；<br>
+- 3、调用PackDecoder.unmarshal(), 传入字节数组以及PackCreator实例，得到对象。
 
-If you need to deserialize an array of objects, you need to create an instance of PackArrayCreator (Only Java version need to do this,  other platform no need to do this).  <br>
+如果需要反序列化一个对象数组, 需要创建PackArrayCreator的实例（Java版本如此，其他版本不需要）。<br>
+PackArrayCreator继承于PackCreator，多了一个newArray方法，简单地创建对应类型对象数组返回即可。
 
-### 2.2 Coded Directly
-The  example above is only one of the examples. It can be used flexibly.
-1. PackCreator does not have to be created in the class which implements Packable. It can be created anywhere else.
-2. If you only need serialization, you just need to implement Packable. In that case, it's unnecessary to create instance of PackCreator.
-3. You can directly encode / decode the message, no need to create Class which implement Packable.
+### 2.2 直接编码
+上面的举例只是范例之一，具体使用过程中，可以灵活运用。<br>
+- 1、PackCreator不一定要在需要反序列化的类中创建，在其他地方也可以，可任意命名。<br>
+- 2、如果只需要序列化（发送方），则只实现Packable即可，不需要实现PackCreator，反之亦然。<br>
+- 3、如果没有类定义，或者不方便改写类，也可以直接编码/解码。
 
 ```java
 static void test2() {
@@ -143,88 +146,42 @@ static void test2() {
 ```
 
 
-### 2.3 Custom Coding
-For example, there is a Class like this:
-```java
-class Info  {
-    public long id;
-    public String name;
-    public Rectangle rect;
-}
-```
+## 3. 性能测试
+除了protobuf之外，还选择了gson (json协议的序列化框架之一，java平台）来做下比较。
 
-Rectangle has four fields：
+空间方面，序列化后数据大小：
 
-![](https://upload-images.jianshu.io/upload_images/1166341-cd89c228fa0a8be5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-
-There's an effective way supplied by packable:
-
-```java
-public static class Info implements Packable {
-    public long id;
-    public String name;
-    public Rectangle rect;
-
-    @Override
-    public void encode(PackEncoder encoder) {
-        encoder.putLong(0, id)
-                .putString(1, name);
-        EncodeBuffer buf = encoder.putCustom(2, 16);
-        buf.writeInt(rect.x);
-        buf.writeInt(rect.y);
-        buf.writeInt(rect.width);
-        buf.writeInt(rect.height);
-    }
-
-    public static final PackCreator<Info> CREATOR = decoder -> {
-        Info info = new Info();
-        info.id = decoder.getLong(0);
-        info.name = decoder.getString(1);
-        DecodeBuffer buf = decoder.getCustom(2);
-        if (buf != null) {
-            info.rect = new Rectangle(
-                    buf.readInt(),
-                    buf.readInt(),
-                    buf.readInt(),
-                    buf.readInt());
-        }
-        return info;
-    };
-}
-```
-
-
-## 3. Benchmark
-
-Space of serialization bytes:
-
-| | Space (byte) 
+| | 数据大小(byte) 
 ---|---
-packable | 2564765 (58%)
-protobuf  | 2627081 (59%)
-gson       | 4427344 (100%)
+packable | 2537191 (57%)
+protobuf  | 2614001 (59%)
+gson       | 4407901 (100%)
 
-Process time:
+packable和protobuf大小相近（packable略小），约为gson的57%。
+
+
+耗时方面，分别在PC和手机上测试了两组数据：
 
 1. Macbook Pro
 
-| |Serialization (ms)| Deserialization (ms)
+| |序列化耗时 (ms)| 反序列化耗时(ms)
 ---|---|---
 packable |9|8
 protobuf |19 |11
 gson     | 67 |46
 
-2. Huawei Honor 20S
+2. 荣耀20S
 
-| |Serialization (ms)| Deserialization (ms)
+| |序列化耗时 (ms)| 反序列化耗时(ms)
 ---|---|---
 packable |32 | 21
 protobuf  | 81 | 38
 gson    | 190 | 128
 
+需要说明的是，数据特征，测试平台等因素都会影响结果，以上测试结果仅供参考。
 
-# 4. Format
-See: [Packable Format](format.md)
+## 4. 关联文档
+https://juejin.cn/post/6992380683977130015/
 
 
 ## License

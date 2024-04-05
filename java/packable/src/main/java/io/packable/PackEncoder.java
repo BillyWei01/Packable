@@ -543,22 +543,6 @@ public final class PackEncoder {
         }
     }
 
-    /**
-     * This method is used for putting custom data.
-     * <p>
-     * You could use this method to put your custom value combine with PackBuffer, which could obtain by {@link #getBuffer()}.
-     * Be sure bytes putting by PackBuffer equal the param 'len'.
-     *
-     * @param index index of data
-     * @param len   length of data
-     * @return EncodeBuffer to write data.
-     * @see PackDecoder#getCustom(int)
-     */
-    public EncodeBuffer putCustom(int index, int len) {
-        wrapTagAndLength(index, len);
-        return buffer;
-    }
-
     int getListSize(int index, Collection<?> value) {
         if (value == null) {
             return 0;
@@ -758,20 +742,6 @@ public final class PackEncoder {
 
     public PackEncoder putBooleanArray(int index, boolean[] value) {
         CompactCoder.putBooleanArray(this, index, value);
-        return this;
-    }
-
-    /**
-     * Put an enum array (map to int value) to buffer, in a compact way.
-     * Only accept values not larger than 255, otherwise will throw IllegalArgumentException.
-     * More detail see {@link CompactCoder#putEnumArray(PackEncoder, int, int[])}
-     *
-     * @param index index of key
-     * @param value bytes
-     * @return PackEncoder
-     */
-    public PackEncoder putEnumArray(int index, int[] value) {
-        CompactCoder.putEnumArray(this, index, value);
         return this;
     }
 

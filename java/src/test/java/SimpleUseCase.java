@@ -98,24 +98,26 @@ public class SimpleUseCase {
 
     @Test
     public void test2() {
-        String msg = "message";
         int a = 100;
+        String msg = "message";
         int b = 200;
 
         PackEncoder encoder = new PackEncoder();
-        encoder.putString(0, msg)
-                .putInt(1, a)
+        encoder.putInt(0, a)
+                .putString(63+3, msg)
                 .putInt(2, b);
         byte[] bytes = encoder.getBytes();
 
-        PackDecoder decoder = PackDecoder.newInstance(bytes);
-        String dMsg = decoder.getString(0);
-        int dA = decoder.getInt(1);
-        int dB = decoder.getInt(2);
-        decoder.recycle();
+        PackDecoder decoder2 = PackDecoder.newInstance(bytes);
+        int dA = decoder2.getInt(0);
+        String dMsg = decoder2.getString(63+3);
+        int dB = decoder2.getInt(2);
+        String emptyMsg = decoder2.getString(3);
+        decoder2.recycle();
 
         boolean equal = msg.equals(dMsg) && (a == dA) && (b == dB);
-
         Assert.assertTrue(equal);
+
+        Assert.assertNull(emptyMsg);
     }
 }

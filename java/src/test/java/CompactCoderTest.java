@@ -10,33 +10,6 @@ public class CompactCoderTest {
     private static Random random = new Random(seed);
 
     @Test
-    public void testEnumArray() {
-        System.out.println("seed:" + seed);
-        int[] maskArray = new int[]{0x1, 0x3, 0xf, 0xff};
-        PackEncoder encoder = new PackEncoder();
-
-        for (int mask : maskArray) {
-            for (int n = 31; n < 50; n++) {
-                int[] a = new int[n];
-                for (int i = 0; i < n; i++) {
-                    a[i] = Math.abs(random.nextInt() & mask);
-                }
-
-                PackEncoder.Result result = encoder.putEnumArray(0, a).getResult();
-                encoder.clear();
-
-                PackDecoder decoder = PackDecoder.newInstance(result.bytes, 0, result.length);
-                int[] b = decoder.getEnumArray( 0);
-                decoder.recycle();
-
-                Assert.assertArrayEquals("n=" + n + " mask:" + mask, a, b);
-            }
-        }
-
-        encoder.recycle();
-    }
-
-    @Test
     public void testBooleanArray() {
         PackEncoder encoder = new PackEncoder();
         System.out.println("seed:" + seed);

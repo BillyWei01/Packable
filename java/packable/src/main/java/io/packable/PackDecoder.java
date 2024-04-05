@@ -148,7 +148,7 @@ public final class PackDecoder {
                 if (existFlags == null) {
                     existFlags = new long[4];
                 }
-                existFlags[index >> 8] |= 1L << (index & 0x3f);
+                existFlags[index >> 6] |= 1L << (index & 0x3f);
             }
 
             if (index >= infoArray.length) {
@@ -204,25 +204,33 @@ public final class PackDecoder {
         if (maxIndex <= 0)
             return;
 
-        int bits = 63 - maxIndex;
-        long flippedFlag = (~existFlag) << bits;
-        if (flippedFlag == 0) {
-            return;
-        }
-        flippedFlag >>>= bits;
-        int i = 0;
-        do {
-            if ((flippedFlag & 1) != 0) {
-                infoArray[i] = NULL_FLAG;
+        if (maxIndex <= 63) {
+            int bits = 63 - maxIndex;
+            long flippedFlag = (~existFlag) << bits;
+            if (flippedFlag == 0) {
+                return;
             }
-            i++;
-            flippedFlag >>>= 1;
-        } while (flippedFlag != 0);
-
-        if (existFlags != null) {
-            for (i = 64; i < maxIndex; i++) {
-                if ((existFlags[i >> 8] & (1L << (i & 0x3F))) == 0) {
+            flippedFlag >>>= bits;
+            int i = 0;
+            do {
+                if ((flippedFlag & 1) != 0) {
                     infoArray[i] = NULL_FLAG;
+                }
+                i++;
+                flippedFlag >>>= 1;
+            } while (flippedFlag != 0);
+        } else {
+            for (int i = 0; i < 64; i++) {
+                if ((existFlag & 1) == 0) {
+                    infoArray[i] = NULL_FLAG;
+                }
+                existFlag >>>= 1;
+            }
+            if (existFlags != null) {
+                for (int i = 64; i < maxIndex; i++) {
+                    if ((existFlags[i >> 6] & (1L << (i & 0x3F))) == 0) {
+                        infoArray[i] = NULL_FLAG;
+                    }
                 }
             }
         }
@@ -251,30 +259,6 @@ public final class PackDecoder {
         }
         return infoArray[index];
     }
-
-    /**
-     * Get custom data.
-     *
-     * This method does not supply too much info(like data length),
-     * so it's only use for fixed format data.
-     *
-     * @param index index of data
-     * @return DecodeBuffer to read data.
-     * If data is empty, call {@link DecodeBuffer#hasRemaining()} will return false;
-     * otherwise DecodeBuffer's position will locate at the right offset.
-     * Return null if data not exist.
-     * @see PackEncoder#putCustom(int, int)
-     */
-    public DecodeBuffer getCustom(int index) {
-        long info = getInfo(index);
-        if (info == NULL_FLAG) {
-            return null;
-        }
-        int len = (int) (info & INT_MASK);
-        buffer.position = (len == 0) ? buffer.limit : (int) (info >>> 32);
-        return buffer;
-    }
-
 
     public boolean contains(int index) {
         return getInfo(index) != NULL_FLAG;
@@ -790,10 +774,6 @@ public final class PackDecoder {
 
     public boolean[] getBooleanArray(int index) {
         return CompactCoder.getBooleanArray(this, index);
-    }
-
-    public int[] getEnumArray(int index) {
-        return CompactCoder.getEnumArray(this, index);
     }
 
     public int[] getCompactIntArray(int index) {
