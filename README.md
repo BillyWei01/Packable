@@ -7,141 +7,122 @@ Packable是一个高效易用的序列化框架。<br>
 可以用于对象序列化/反序列化，消息封装等，从而方便本地存储或网络传输。
 
 Packable有以下优点：
-- 1、编码/解码快速
-- 2、编码紧凑，体积小
-- 3、使用方便, 方法灵活
-- 4、代码轻量
-- 5、支持多种类型和压缩策略
-- 6、支持多种语言，可跨平台传输
+- 1、编码/解码快速。
+- 2、编码紧凑，体积小。
+- 3、支持版本兼容（增删字段不影响整体的解析）。
+- 4、代码轻量（Java版本仅20+K）。
+- 5、支持多种类型。
+- 6、支持多种语言，可跨平台传输。
+
 
 Packable目前实现了Java、C++、C#、Objective-C、Go等版本。
 
 ## 2. 使用方法
-以下以JAVA平台的用法举例，其他平台用法类似。
+以下以JAVA平台的用法举例。
 
 Java代码已发布到Maven仓库，路径如下：
 ```gradle
 dependencies {
-    implementation 'io.github.billywei01:packable:1.1.0'
+    implementation 'io.github.billywei01:packable:2.0.1'
 }
 ```
 
-假设有下面这样的两个对象：
-
-```java
-class Data {
-    String msg;
-    Item[] items;
-}
-
-class Item {
-    int a;
-    long b;
-}
-```
 
 ### 2.1 常规用法
-序列化/反序列化用例如下：
+
+假设类型定义如下：
 
 ```java
-static class Data implements Packable {
-    String msg;
-    Item[] items;
+public class Person {
+    public String name;
+    public int age;
 
+    public Person(String name, int age){
+        this.name = name;
+        this.age = age;
+    }
+}
+```
+
+
+使用前，可以定义解码方法如下：
+
+```java
+public static final Packer<Person> PERSON_PACKER = new Packer<Person>() {
+    // 打包目标对象到encoder
     @Override
-    public void encode(PackEncoder encoder) {
-        encoder.putString(0, msg)
-                .putPackableArray(1, items);
+    public void pack(PackEncoder encoder, Person target) {
+        // 0, 1等编号，类似json的key, 用于标记字段。
+        encoder.putString(0, target.name)
+                .putInt(1, target.age);
     }
 
-    public static final PackCreator<Data> CREATOR = decoder -> {
-        Data data = new Data();
-        data.msg = decoder.getString(0);
-        data.items = decoder.getPackableArray(1, Item.CREATOR);
-        return data;
-    };
-}
-
-static class Item implements Packable {
-    int a;
-    long b;
-
-    Item(int a, long b) {
-        this.a = a;
-        this.b = b;
-    }
-
+    // 从decoder解包目标对象
     @Override
-    public void encode(PackEncoder encoder) {
-        encoder.putInt(0, a);
-        encoder.putLong(1, b);
+    public Person unpack(PackDecoder decoder) {
+        // 根据编号取出对应的字段
+        return new Person(
+                decoder.getString(0),
+                decoder.getInt(1)
+        );
     }
-
-    static final PackArrayCreator<Item> CREATOR = new PackArrayCreator<Item>() {
-        @Override
-        public Item[] newArray(int size) {
-            return new Item[size];
-        }
-
-        @Override
-        public Item decode(PackDecoder decoder) {
-            return new Item(
-                    decoder.getInt(0),
-                    decoder.getLong(1)
-            );
-        }
-    };
-}
-
-static void test() {
-    Data data = new Data();
-    // 序列化
-    byte[] bytes = PackEncoder.marshal(data);
-    // 反序列化
-    Data data_2 = PackDecoder.unmarshal(bytes, Data.CREATOR);
-}
+};
 
 ```
 
-#### 序列化
-- 1、声明 implements Packable 接口；<br>
-- 2、实现encode()方法，编码各个字段（PackEncoder提供了各种类型的API）；<br>
-- 3、调用PackEncoder.marshal()方法，传入对象， 得到字节数组。
 
-#### 反序列化
-- 1、创建一个静态对象，该对象为PackCreator的实例；<br>
-- 2、实现decode()方法，解码各个字段，赋值给对象；<br>
-- 3、调用PackDecoder.unmarshal(), 传入字节数组以及PackCreator实例，得到对象。
+解码对象：
 
-如果需要反序列化一个对象数组, 需要创建PackArrayCreator的实例（Java版本如此，其他版本不需要）。<br>
-PackArrayCreator继承于PackCreator，多了一个newArray方法，简单地创建对应类型对象数组返回即可。
+```java
+public void test() {
+    Person person = new Person("Tom", 20);
+    
+    // 序列化
+    byte[] encoded = PackEncoder.encode(person, PERSON_PACKER);
+    
+    // 反序列化
+    Person decoded = PackDecoder.decode(encoded, PERSON_PACKER);
+}
+```
+
+解码列表：
+
+```java
+public void test4() {
+    List<Person> personList = new ArrayList<>();
+    personList.add(new Person("Tom", 20));
+    personList.add(new Person("Jerry", 19));
+
+    // 序列化
+    byte[] encoded = PackEncoder.encodeList(personList, PERSON_PACKER);
+    
+    // 反序列化
+    List<Person> decoded = PackDecoder.decodeList(encoded, PERSON_PACKER);
+}
+```
+
+
 
 ### 2.2 直接编码
 上面的举例只是范例之一，具体使用过程中，可以灵活运用。<br>
-- 1、PackCreator不一定要在需要反序列化的类中创建，在其他地方也可以，可任意命名。<br>
-- 2、如果只需要序列化（发送方），则只实现Packable即可，不需要实现PackCreator，反之亦然。<br>
-- 3、如果没有类定义，或者不方便改写类，也可以直接编码/解码。
+比如，可以直接编解码
 
 ```java
-static void test2() {
-    String msg = "message";
+public void test2() {
+    String message = "hello";
     int a = 100;
     int b = 200;
 
     PackEncoder encoder = new PackEncoder();
-    encoder.putString(0, msg)
-                .putInt(1, a)
-                .putInt(2, b);
-    byte[] bytes = encoder.getBytes();
+    encoder.putString(0, message)
+            .putInt(1, a)
+            .putInt(2, b);
+    byte[] bytes = encoder.toBytes();
 
-    PackDecoder decoder = PackDecoder.newInstance(bytes);
-    String dMsg = decoder.getString(0);
-    int dA = decoder.getInt(1);
-    int dB = decoder.getInt(2);
-    decoder.recycle();
-
-    boolean equal = msg.equals(dMsg) && (a == dA) && (b == dB);
-    Assert.assertTrue(equal);
+    PackDecoder decoder = new PackDecoder(bytes);
+    String decodeMessage = decoder.getString(0);
+    int decodedA = decoder.getInt(1);
+    int decodedB = decoder.getInt(2);
 }
 ```
 
@@ -178,7 +159,6 @@ packable |32 | 21
 protobuf  | 81 | 38
 gson    | 190 | 128
 
-需要说明的是，数据特征，测试平台等因素都会影响结果，以上测试结果仅供参考。
 
 ## 4. 关联文档
 https://juejin.cn/post/6992380683977130015/

@@ -2,47 +2,34 @@ package io.packable;
 
 public class PackConfig {
     /**
-     * {@link CharArrayPool} used to buffer String's char[].
-     * CharArrayPool only provide buffers which length = CHAR_BUFFER_SIZE,<br>
-     * if the String's length(in utf8 encoding) is large than CHAR_BUFFER_SIZE, new char array will be allocated.<br>
-     * So if your server/application need to decode long length String,
-     * you could set CHAR_BUFFER_SIZE to a optimal size.
+     * 遇到未知类型时，忽略还是抛异常：
+     * true: 忽略 （默认）
+     * false: 抛异常
+     * 建议 debug 时设置为 false, release 时设置为true。
      */
-    public static int CHAR_BUFFER_SIZE = 2048;
+    public static boolean ignoreUnknownType = true;
 
     /**
-     * Object size limit, one million in default.
-     * In case of error message to allocate too much memory.
-     * You could adjust the size according to your situation.
+     * 对象数组最大size
+     * <br>
+     * 用于编解码对象（字符串和自定义对象）时，限制数组元素的个数，
+     * 默认 1M （一百万），可以自行设定。
+     * <br>
+     * 解码对象数组时，会先检查要创建的数组的大小，再执行创建数组。
+     * 这样做时为了防止因为数据异常而创建超大的数组，进而引发OOM。
      */
-    public static int MAX_OBJECT_ARRAY_SIZE = 1 << 20;
+    public static int maxObjectArraySize = 1 << 20;
 
     /**
-     * Buffer size limit, 1G.
-     * It's safety to limit the capacity.
-     * Besides, it's not effective if the buffer is too large.
+     * 最大buffer容量，1G
+     * <br>
+     * 限制 buffer 容量大小主要是为了安全考虑，buffer 过大容易发生OOM。
+     * 对象的占用空间通常比 buffer 大，假设 buffer 有1G，对象 + buffer 占用空间会在2G以上。
      */
     static final int MAX_BUFFER_SIZE = 1 << 30;
 
     /**
-     * Limit of double memory (double again).
-     * See {@link PackEncoder#checkCapacity(int)}
+     * 用于标记 NULL 对象
      */
-    static final int DOUBLE_BUFFER_LIMIT = 1 << 22;
-
-    /**
-     * Before putting object and object array to buffer, we reserve 4 bytes to place the 'length',
-     * When accomplish, we know the exactly 'length',
-     * if the 'length' is less or equal than TRIM_SIZE_LIMIT, we retrieved 3 bytes (by moving bytes forward).</p>
-     * <p>
-     * We could set TRIM_SIZE_LIMIT up to 255, but it's not effective to move too many bytes to save 3 bytes.
-     * Besides, object recursion might make moving bytes grow up,
-     * set a little limit could make the recursion moving stop soon.
-     */
-    static final int TRIM_SIZE_LIMIT = 127;
-
-    /**
-     * use to mark null packable object
-     */
-    static final short NULL_PACKABLE = (short) 0xffff;
+    static final short NULL_OBJECT_FLAG = (short) 0xffff;
 }

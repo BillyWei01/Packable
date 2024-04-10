@@ -1,7 +1,7 @@
 package io.packable;
 
-public final class DecodeBuffer {
-    byte[] hb;
+final class DecodeBuffer {
+    final byte[] hb;
     int position;
     int limit;
 
@@ -37,7 +37,7 @@ public final class DecodeBuffer {
                 ((hb[position++]) << 24));
     }
 
-    public int readVarint32() {
+    public int readVarInt32() {
         int x = hb[position++];
         if ((x >> 7) == 0) return x;
         x = (x & 0x7f) | (hb[position++] << 7);

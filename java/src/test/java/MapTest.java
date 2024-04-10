@@ -17,10 +17,10 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putStr2Str(0, a).toBytes();
+        byte[] bytes = encoder.putMap(0, a).toBytes();
 
-        PackDecoder decoder = PackDecoder.newInstance(bytes);
-        Map<String, String> b = decoder.getStr2Str(0);
+        PackDecoder decoder = new PackDecoder(bytes);
+        Map<String, String> b = decoder.getMap(0, String.class ,String.class);
 
         Assert.assertEquals(a, b);
     }
@@ -34,10 +34,10 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putStr2Pack(0, a).toBytes();
+        byte[] bytes = encoder.putMap(0, a, null, TEST_VO_PACKER).toBytes();
 
-        PackDecoder decoder = PackDecoder.newInstance(bytes);
-        Map<String, TestVo> b = decoder.getStr2Pack(0, TestVo.CREATOR);
+        PackDecoder decoder = new PackDecoder(bytes);
+        Map<String, TestVo> b = decoder.getMap(0, String.class, TestVo.class, null, TEST_VO_PACKER);
 
         Assert.assertEquals(a, b);
 }
@@ -57,10 +57,10 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putStr2Number(0, a).toBytes();
+        byte[] bytes = encoder.putMap(0, a).toBytes();
 
-        PackDecoder decoder = PackDecoder.newInstance(bytes);
-        Map<String, Integer> b = decoder.getStr2Int(0);
+        PackDecoder decoder = new PackDecoder(bytes);
+        Map<String, Integer> b = decoder.getMap(0, String.class, Integer.class);
 
         Assert.assertEquals(a, b);
     }
@@ -72,10 +72,10 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putStr2Number(0, a).toBytes();
+        byte[] bytes = encoder.putMap(0, a).toBytes();
 
-        PackDecoder decoder = PackDecoder.newInstance(bytes);
-        Map<String, Long> b = decoder.getStr2Long(0);
+        PackDecoder decoder = new PackDecoder(bytes);
+        Map<String, Long> b = decoder.getMap(0, String.class, Long.class);
 
         Assert.assertEquals(a, b);
     }
@@ -87,10 +87,10 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putStr2Number(0, a).toBytes();
+        byte[] bytes = encoder.putMap(0, a).toBytes();
 
-        PackDecoder decoder = PackDecoder.newInstance(bytes);
-        Map<String, Float> b = decoder.getStr2Float(0);
+        PackDecoder decoder = new PackDecoder(bytes);
+        Map<String, Float> b = decoder.getMap(0, String.class, Float.class);
 
         Assert.assertEquals(a, b);
     }
@@ -102,10 +102,10 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putStr2Number(0, a).toBytes();
+        byte[] bytes = encoder.putMap(0, a).toBytes();
 
-        PackDecoder decoder = PackDecoder.newInstance(bytes);
-        Map<String, Double> b = decoder.getStr2Double(0);
+        PackDecoder decoder = new PackDecoder(bytes);
+        Map<String, Double> b = decoder.getMap(0, String.class, Double.class);
 
         Assert.assertEquals(a, b);
     }
@@ -118,10 +118,10 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putInt2Int(0, a).toBytes();
+        byte[] bytes = encoder.putMap(0, a).toBytes();
 
-        PackDecoder decoder = PackDecoder.newInstance(bytes);
-        Map<Integer, Integer> b = decoder.getInt2Int(0);
+        PackDecoder decoder = new PackDecoder(bytes);
+        Map<Integer, Integer> b = decoder.getMap(0, Integer.class, Integer.class);
 
         Assert.assertEquals(a, b);
     }
@@ -134,15 +134,31 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putInt2Str(0, a).toBytes();
+        byte[] bytes = encoder.putMap(0, a).toBytes();
 
-        PackDecoder decoder = PackDecoder.newInstance(bytes);
-        Map<Integer, String> b = decoder.getInt2Str(0);
+        PackDecoder decoder = new PackDecoder(bytes);
+        Map<Integer, String> b = decoder.getMap(0, Integer.class, String.class);
 
         Assert.assertEquals(a, b);
     }
 
-    private static class TestVo implements Packable {
+    private static final Packer<TestVo> TEST_VO_PACKER = new Packer<TestVo>() {
+        @Override
+        public void pack(PackEncoder encoder, TestVo target) {
+            encoder.putInt(0, target.a)
+                    .putLong(1, target.b);
+        }
+
+        @Override
+        public TestVo unpack(PackDecoder decoder) {
+            return new TestVo(
+                    decoder.getInt(0),
+                    decoder.getLong(1)
+            );
+        }
+    };
+
+    private static class TestVo  {
         int a;
         long b;
 
@@ -164,22 +180,5 @@ public class MapTest {
         public int hashCode() {
             return Objects.hash(a, b);
         }
-
-        @Override
-        public void encode(PackEncoder encoder) {
-            encoder.putInt(0, a);
-            encoder.putLong(1, b);
-        }
-
-        static final PackCreator<TestVo> CREATOR = new PackCreator<TestVo>() {
-            @Override
-            public TestVo decode(PackDecoder decoder) {
-                return new TestVo(
-                        decoder.getInt(0),
-                        decoder.getLong(1)
-                );
-            }
-        };
     }
-
 }

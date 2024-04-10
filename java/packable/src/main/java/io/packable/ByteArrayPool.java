@@ -10,18 +10,22 @@ import java.util.LinkedList;
 class ByteArrayPool {
     // default array size : 4K
     private static final int DEFAULT_ARRAY_LEN_SHIFT = 12;
-    static final int DEFAULT_ARRAY_SIZE = 1 << DEFAULT_ARRAY_LEN_SHIFT;
-    private static final int DEFAULT_CAPACITY = 10;
+    private static final int DEFAULT_ARRAY_SIZE = 1 << DEFAULT_ARRAY_LEN_SHIFT;
+    private static final int DEFAULT_CAPACITY = 8;
     private static int defaultCount = 0;
     private static final byte[][] defaultArrays = new byte[DEFAULT_CAPACITY][];
 
-    // max array size: 64M
-    private static final int MAX_ARRAY_SHIFT = 26;
+    // max pool array size: 4M
+    private static final int MAX_ARRAY_SHIFT = 22;
     private static final int MAX_ARRAY_SIZE  = 1 << MAX_ARRAY_SHIFT;
 
     private static final int TEMP_ARRAYS_CAPACITY = MAX_ARRAY_SHIFT - DEFAULT_ARRAY_LEN_SHIFT;
     @SuppressWarnings("unchecked")
     private static final LinkedList<WeakReference<byte[]>>[] tempArrays = new LinkedList[TEMP_ARRAYS_CAPACITY];
+
+    static byte[] getArray() {
+        return getArray(DEFAULT_ARRAY_SIZE);
+    }
 
     static byte[] getArray(int len) {
         if (len > PackConfig.MAX_BUFFER_SIZE) {

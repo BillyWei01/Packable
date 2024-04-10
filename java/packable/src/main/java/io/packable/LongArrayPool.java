@@ -5,7 +5,7 @@ package io.packable;
  */
 class LongArrayPool {
     private static final int DEFAULT_SIZE = 32;
-    private static final int DEFAULT_CAPACITY = 24;
+    private static final int DEFAULT_CAPACITY = 16;
     private static int defaultCount = 0;
     private static final long[][] defaultArrays = new long[DEFAULT_CAPACITY][];
 

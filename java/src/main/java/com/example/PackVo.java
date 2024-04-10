@@ -1,6 +1,5 @@
 package com.example;
 
-import io.packable.*;
 import java.util.*;
 
 public class PackVo {
@@ -9,42 +8,13 @@ public class PackVo {
         static final Result[] ARRAY = new Result[]{ SUCCESS, FAILED_1, FAILED_2, FAILED_3 };
     }
 
-    public static class Category implements Packable {
+    public static class Category  {
         String name;
         int level;
         long i_column;
         double d_column;
         String des;
         Category[] sub_category;
-
-        @Override
-        public void encode(PackEncoder encoder) {
-            encoder.putString(0, name)
-                    .putInt(1, level)
-                    .putLong(2, i_column)
-                    .putDouble(3, d_column)
-                    .putString(4, des)
-                    .putPackableArray(5, sub_category);
-        }
-
-        public static final PackArrayCreator<Category> CREATOR = new PackArrayCreator<Category>() {
-            @Override
-            public Category decode(PackDecoder decoder) {
-                Category c = new Category();
-                c.name = decoder.getString(0);
-                c.level = decoder.getInt(1);
-                c.i_column = decoder.getLong(2);
-                c.d_column = decoder.getDouble(3);
-                c.des = decoder.getString(4);
-                c.sub_category = decoder.getPackableArray(5, CREATOR);
-                return c;
-            }
-
-            @Override
-            public Category[] newArray(int size) {
-                return new Category[size];
-            }
-        };
 
         @Override
         public boolean equals(Object o) {
@@ -60,7 +30,7 @@ public class PackVo {
         }
     }
 
-    public static class Data implements Packable {
+    public static class Data {
         boolean d_bool;
         float d_float;
         double d_double;
@@ -82,65 +52,6 @@ public class PackVo {
         float[] float_array;
         double[] double_array;
         String[] string_array;
-
-        @Override
-        public void encode(PackEncoder encoder) {
-            encoder.putBoolean(0, d_bool)
-                    .putFloat(1, d_float)
-                    .putDouble(2, d_double)
-                    .putString(3, string_1)
-                    .putInt(4, int_1)
-                    .putInt(5, int_2)
-                    .putInt(6, int_3)
-                    .putInt(7, int_4)
-                    .putInt(8, int_5)
-                    .putLong(9, long_1)
-                    .putLong(10, long_2)
-                    .putLong(11, long_3)
-                    .putLong(12, long_4)
-                    .putLong(13, long_5)
-                    .putPackable(14, d_category)
-                    .putBooleanArray(15, bool_array)
-                    .putIntArray(16, int_array)
-                    .putLongArray(17, long_array)
-                    .putFloatArray(18, float_array)
-                    .putDoubleArray(19, double_array)
-                    .putStringArray(20, string_array);
-        }
-
-        public static final PackArrayCreator<Data> CREATOR = new PackArrayCreator<Data>() {
-            @Override
-            public Data decode(PackDecoder decoder) {
-                Data d = new Data();
-                d.d_bool = decoder.getBoolean(0);
-                d.d_float = decoder.getFloat(1);
-                d.d_double = decoder.getDouble(2);
-                d.string_1 = decoder.getString(3);
-                d.int_1 = decoder.getInt(4);
-                d.int_2 = decoder.getInt(5);
-                d.int_3 = decoder.getInt(6);
-                d.int_4 = decoder.getInt(7);
-                d.int_5 = decoder.getInt(8);
-                d.long_1 = decoder.getLong(9);
-                d.long_2 = decoder.getLong(10);
-                d.long_3 = decoder.getLong(11);
-                d.long_4 = decoder.getLong(12);
-                d.long_5 = decoder.getLong(13);
-                d.d_category = decoder.getPackable(14, Category.CREATOR);
-                d.bool_array = decoder.getBooleanArray(15);
-                d.int_array = decoder.getIntArray(16);
-                d.long_array = decoder.getLongArray(17);
-                d.float_array = decoder.getFloatArray(18);
-                d.double_array = decoder.getDoubleArray(19);
-                d.string_array = decoder.getStringArray(20);
-                return d;
-            }
-
-            @Override
-            public Data[] newArray(int size) {
-                return new Data[size];
-            }
-        };
 
         @Override
         public boolean equals(Object o) {
@@ -171,28 +82,10 @@ public class PackVo {
         }
     }
 
-    public static class Response implements Packable {
+    public static class Response {
         Result code;
         String detail;
         Data[] data;
-
-        @Override
-        public void encode(PackEncoder encoder) {
-            encoder.putInt(0, code.ordinal())
-                    .putString(1, detail)
-                    .putPackableArray(2, data);
-        }
-
-        public static final PackCreator<Response> CREATOR = new PackCreator<Response>() {
-            @Override
-            public Response decode(PackDecoder decoder) {
-                Response r = new Response();
-                r.code = Result.ARRAY[decoder.getInt(0)];
-                r.detail = decoder.getString(1);
-                r.data = decoder.getPackableArray(2, Data.CREATOR);
-                return r;
-            }
-        };
 
         @Override
         public boolean equals(Object o) {

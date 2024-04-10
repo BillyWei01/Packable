@@ -1,6 +1,8 @@
 package io.packable;
 
-public final class EncodeBuffer {
+final class EncodeBuffer {
+    private volatile static int sMaxAllocated = 4096;
+
     byte[] hb;
     int position;
 
@@ -9,7 +11,7 @@ public final class EncodeBuffer {
         position = 0;
     }
 
-    public final void writeByte(byte v) {
+    public void writeByte(byte v) {
         hb[position++] = v;
     }
 
@@ -37,7 +39,7 @@ public final class EncodeBuffer {
         hb[i] = (byte) (v >> 24);
     }
 
-    public static int getVarint32Size(int v) {
+    public static int getVarInt32Size(int v) {
         if ((v >> 7) == 0) {
             return 1;
         } else if ((v >> 14) == 0) {
@@ -50,7 +52,7 @@ public final class EncodeBuffer {
         return 5;
     }
 
-    public void writeVarintNegative1() {
+    public void writeVarIntNegative1() {
         hb[position++] = -1;
         hb[position++] = -1;
         hb[position++] = -1;
@@ -58,7 +60,7 @@ public final class EncodeBuffer {
         hb[position++] = 15;
     }
 
-    public int writeVarint32(int i, int v) {
+    public int writeVarInt32(int i, int v) {
         while ((v & 0xffffff80) != 0) {
             hb[i++] = (byte) ((v & 0x7f) | 0x80);
             v >>>= 7;
@@ -67,8 +69,8 @@ public final class EncodeBuffer {
         return i;
     }
 
-    public void writeVarint32(int v) {
-        position = writeVarint32(position, v);
+    public void writeVarInt32(int v) {
+        position = writeVarInt32(position, v);
     }
 
     public void writeLong(long v) {
@@ -95,6 +97,40 @@ public final class EncodeBuffer {
         if (len > 0) {
             System.arraycopy(src, 0, hb, position, len);
             position += len;
+        }
+    }
+
+    void checkCapacity(int expandSize) {
+        int capacity = hb.length;
+        int desSize = position + expandSize;
+        if (desSize <= 0) {
+            throw new IllegalStateException("desire capacity overflow");
+        }
+        if (desSize > capacity) {
+            if (desSize > PackConfig.MAX_BUFFER_SIZE) {
+                throw new IllegalStateException("desire capacity over limit");
+            }
+            int newSize = capacity << 1;
+            while (desSize > newSize) {
+                newSize = newSize << 1;
+            }
+            /*
+             * 扩容之后需要拷贝内容到新的字节数组，需要一定消耗，
+             * 因此，在 buffer 比较小的时候，我们扩容激进一些。
+             * 当扩容大小超过达到阈值(当前设定为1M)，则不再激进扩容。
+             */
+            int doubleLimit = Math.min(sMaxAllocated, (1 << 20));
+            if (newSize < doubleLimit) {
+                newSize = newSize << 1;
+            }
+            if (newSize > sMaxAllocated) {
+                sMaxAllocated = newSize;
+            }
+            byte[] oldArray = hb;
+            byte[] newArray = ByteArrayPool.getArray(newSize);
+            System.arraycopy(oldArray, 0, newArray, 0, position);
+            hb = newArray;
+            ByteArrayPool.recycleArray(oldArray);
         }
     }
 }

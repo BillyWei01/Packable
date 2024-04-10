@@ -1,7 +1,4 @@
-import com.example.DataGenerator;
-import com.example.IOUtil;
-import com.example.PackVo;
-import com.example.ProtoVo;
+import com.example.*;
 import com.google.gson.Gson;
 import io.packable.PackDecoder;
 import io.packable.PackEncoder;
@@ -9,8 +6,8 @@ import io.packable.PackEncoder;
 import java.io.File;
 
 public class Main {
-    public static void main(String[] args) throws Exception {
-        //outputData(2000);
+    public static void main(String[] args)  {
+        // outputData(2000);
 
         // warming up
         testPerformance(500, false);
@@ -31,11 +28,11 @@ public class Main {
                 Gson gson = new Gson();
                 long t1 = System.nanoTime();
 
-                byte[] packData = PackEncoder.marshal(packResponse);
+                byte[] packData = PackEncoder.encode(packResponse, PackVoPackers.RESPONSE_PACKER);
 
                 long t2 = System.nanoTime();
 
-                PackVo.Response packR = PackDecoder.unmarshal(packData, PackVo.Response.CREATOR);
+                PackVo.Response packResult = PackDecoder.decode(packData, PackVoPackers.RESPONSE_PACKER);
 
                 long t3 = System.nanoTime();
 
@@ -43,7 +40,7 @@ public class Main {
 
                 long t4 = System.nanoTime();
 
-                ProtoVo.Response protoR = ProtoVo.Response.parseFrom(protoData);
+                ProtoVo.Response protoResult = ProtoVo.Response.parseFrom(protoData);
 
                 long t5 = System.nanoTime();
 
@@ -51,7 +48,7 @@ public class Main {
 
                 long t6 = System.nanoTime();
 
-                PackVo.Response gsonR = gson.fromJson(json, PackVo.Response.class);
+                PackVo.Response gsonResult = gson.fromJson(json, PackVo.Response.class);
 
                 long t7 = System.nanoTime();
 
@@ -63,20 +60,20 @@ public class Main {
                 a6 += t7 - t6;
 
                 if (l1 != 0L && l1 != packData.length) {
-                    throw new Exception("l1 != packData.length");
+                    throw new Exception("packData.length error");
                 }
                 l1 = packData.length;
                 l2 = protoData.length;
                 l3 = json.getBytes().length;
 
-                if (!packResponse.equals(packR)) {
-                    throw new Exception("packResponse != packR");
+                if (!packResponse.equals(packResult)) {
+                    throw new Exception("packResponse != packResult");
                 }
-                if (!protoResponse.equals(protoR)) {
-                    throw new Exception("protoResponse != packR");
+                if (!protoResponse.equals(protoResult)) {
+                    throw new Exception("protoResponse != protoResult");
                 }
-                if (!packResponse.equals(gsonR)) {
-                    throw new Exception("packResponse != gsonR");
+                if (!packResponse.equals(gsonResult)) {
+                    throw new Exception("packResponse != gsonResult");
                 }
             }
 
@@ -100,18 +97,21 @@ public class Main {
     }
 
 
-
-    static void outputData(int n) throws Exception {
-        ProtoVo.Response protoResponse = DataGenerator.generateProtoData(n);
-        PackVo.Response packResponse = DataGenerator.convertProtoVoToPackVo(protoResponse);
-        byte[] packData = PackEncoder.marshal(packResponse);
-        PackVo.Response packR = PackDecoder.unmarshal(packData, PackVo.Response.CREATOR);
-        if (!packResponse.equals(packR)) {
-            throw new Exception("packResponse != packR");
+    static void outputData(int n) {
+        try {
+            ProtoVo.Response protoResponse = DataGenerator.generateProtoData(n);
+            PackVo.Response packResponse = DataGenerator.convertProtoVoToPackVo(protoResponse);
+            byte[] packData = PackEncoder.encode(packResponse, PackVoPackers.RESPONSE_PACKER);
+            PackVo.Response packResult = PackDecoder.decode(packData, PackVoPackers.RESPONSE_PACKER);
+            if (!packResponse.equals(packResult)) {
+                throw new Exception("packResponse != packResult");
+            }
+            File file = new File("../test_data/packable_" + n + ".data");
+            IOUtil.bytesToFile(packData, file);
+            System.out.println(file.getAbsolutePath());
+            System.out.println("output data len: " + packData.length);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        File file = new File("../test_data/packable_" + n + ".data");
-        IOUtil.bytesToFile(packData, file);
-        System.out.println(file.getAbsolutePath());
-        System.out.println("output data len: " + packData.length);
     }
 }

@@ -1,50 +1,52 @@
 package io.packable;
 
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
- * PackDecoder, to decode bytes data to target object.
+ * PackDecoder
+ * 作用：将byte数组解码为目标对象。
+ * 如果要解码的数组是不完整的或者被损坏的，则解码过程可能会抛出异常，
+ * 所以解码时最好留意数据源的可靠性，如果数据源不可靠，请注意 catch 异常。
  */
 public final class PackDecoder {
-    static final long NULL_FLAG = ~0;
-    static final long INT_MASK = 0xffffffffL;
-    static final int DECODER_POOL_CAPACITY = 8;
+    private static final long NULL_FLAG = ~0L;
+    private static final long INT_MASK = 0xffffffffL;
+    private static final int DECODER_POOL_CAPACITY = 8;
 
+    /**
+     * 解析子对象时（包括递归调用或者解析对象数组）需要子 Decoder;
+     * 为了避免频繁创建对象，实现了这个 Decoder 池。
+     */
     private static class DecoderPool {
         private PackDecoder[] decoderArray;
         private int count = 0;
         private char[] charBuffer;
 
-        // root decoder buffer
-        final DecodeBuffer buffer;
+        final byte[] bytes;
 
-        DecoderPool(DecodeBuffer buffer) {
-            this.buffer = buffer;
+        DecoderPool(byte[] bytes) {
+            this.bytes = bytes;
         }
 
         private PackDecoder getDecoder(int offset, int len) {
-            PackDecoder decoder;
             if (count > 0) {
-                decoder = decoderArray[--count];
+                PackDecoder decoder = decoderArray[--count];
+                decoderArray[count] = null;
                 decoder.buffer.position = offset;
                 decoder.buffer.limit = offset + len;
                 decoder.maxIndex = -1;
-            } else {
-                decoder = new PackDecoder();
-                decoder.buffer = new DecodeBuffer(buffer.hb, offset, len);
-                decoder.pool = this;
+                return decoder;
             }
-            return decoder;
+            // 对象池为空，则创建新 Decoder
+            return new PackDecoder(new DecodeBuffer(bytes, offset, len), this);
         }
 
         private void recycleDecoder(PackDecoder decoder) {
             if (count >= DECODER_POOL_CAPACITY) {
                 LongArrayPool.recycleArray(decoder.infoArray);
                 decoder.infoArray = null;
+                decoder.recycled = true;
+                decoder.maxIndex = -1;
                 return;
             }
             if (decoderArray == null) {
@@ -53,37 +55,37 @@ public final class PackDecoder {
             decoderArray[count++] = decoder;
         }
 
-        private void releaseDecoders() {
+        private void release() {
             for (int i = 0; i < count; i++) {
                 PackDecoder decoder = decoderArray[i];
                 LongArrayPool.recycleArray(decoder.infoArray);
-                decoder.pool = null;
+                decoderArray[i] = null;
             }
             decoderArray = null;
         }
     }
 
-    private DecoderPool pool;
-    private DecodeBuffer buffer;
+    private final DecoderPool pool;
+    private final DecodeBuffer buffer;
+
+    // 记录各字段的value，或者位置和长度
     private long[] infoArray;
+
+    // 标记 infoArray 最大的有效下标
     private int maxIndex = -1;
 
-    public static <T> T unmarshal(byte[] bytes, PackCreator<T> creator) {
-        return unmarshal(bytes, 0, bytes.length, creator);
+    // 标记是否已回收
+    private boolean recycled = false;
+
+
+
+    public PackDecoder(byte[] bytes) {
+        this(bytes, 0, bytes.length);
     }
 
-    public static <T> T unmarshal(byte[] bytes, int offset, int len, PackCreator<T> creator) {
-        PackDecoder decoder = newInstance(bytes, offset, len);
-        T t = creator.decode(decoder);
-        decoder.recycle();
-        return t;
-    }
+    public PackDecoder(byte[] bytes, int offset, int len) {
+        this(new DecodeBuffer(bytes, offset, len), new DecoderPool(bytes));
 
-    public static PackDecoder newInstance(byte[] bytes) {
-        return newInstance(bytes, 0, bytes.length);
-    }
-
-    public static PackDecoder newInstance(byte[] bytes, int offset, int len) {
         if (bytes == null) {
             throw new IllegalArgumentException("bytes is null");
         }
@@ -94,26 +96,81 @@ public final class PackDecoder {
             throw new IllegalArgumentException("out of range, " +
                     "size:" + bytes.length + " offset:" + offset + " length:" + len);
         }
-
-        PackDecoder decoder = new PackDecoder();
-        decoder.buffer = new DecodeBuffer(bytes, offset, len);
-        decoder.pool = new DecoderPool(decoder.buffer);
-        return decoder;
     }
 
-    private PackDecoder() {
+    private PackDecoder(DecodeBuffer buffer, DecoderPool pool) {
+        this.buffer = buffer;
+        this.pool = pool;
+    }
+
+    public static <T> T decode(byte[] bytes, Packer<T> packer) {
+        return decode(bytes, 0, bytes.length, packer);
+    }
+
+    public static <T> T decode(byte[] bytes, int offset, int len, Packer<T> packer) {
+        PackDecoder decoder = new PackDecoder(bytes, offset, len);
+        T t = packer.unpack(decoder);
+        decoder.recycle();
+        return t;
+    }
+
+    public static <T> List<T> decodeList(byte[] bytes, Packer<T> packer) {
+        if (bytes == null || bytes.length == 0)
+            return new ArrayList<>();
+        PackDecoder decoder = new PackDecoder(bytes);
+        DecodeBuffer buffer = decoder.buffer;
+        int size = buffer.readVarInt32();
+        List<T> value = new ArrayList<T>(size);
+        for (int i = 0; i < size; i++) {
+            value.add(decoder.takeObject(packer));
+        }
+        decoder.recycle();
+        return value;
+    }
+
+    public static int[] decodeIntArray(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) return new int[0];
+        DecodeBuffer buffer = new DecodeBuffer(bytes, 0, bytes.length);
+        int size = buffer.readVarInt32();
+        return wrapIntArray(buffer, size);
+    }
+
+    public static long[] decodeLongArray(byte[] bytes) {
+        if (bytes == null || bytes.length == 0) return new long[0];
+        DecodeBuffer buffer = new DecodeBuffer(bytes, 0, bytes.length);
+        int size = buffer.readVarInt32();
+        return wrapLongArray(buffer, size);
+    }
+
+    private static int[] wrapIntArray(DecodeBuffer buffer , int n) {
+        int[] value = new int[n];
+        for (int i = 0; i < n; i++) {
+            value[i] = buffer.readInt();
+        }
+        return value;
+    }
+
+    private static long[] wrapLongArray(DecodeBuffer buffer, int n) {
+        long[] value = new long[n];
+        for (int i = 0; i < n; i++) {
+            value[i] = buffer.readLong();
+        }
+        return value;
+    }
+
+    private void checkState() {
+        if (recycled) {
+            throw new IllegalStateException("Decoder had been recycled");
+        }
     }
 
     private void recycle() {
-        if (pool == null) {
-            return;
-        }
+        checkState();
         CharArrayPool.recycleArray(pool.charBuffer);
         LongArrayPool.recycleArray(this.infoArray);
-        pool.releaseDecoders();
-        pool = null;
-        buffer = null;
+        pool.release();
         maxIndex = -1;
+        recycled = true;
     }
 
     private void parseBuffer() {
@@ -157,11 +214,13 @@ public final class PackDecoder {
                 } else if (type == TagFormat.TYPE_NUM_32) {
                     infoArray[index] = ((long) buffer.readInt()) & 0xffffffffL;
                 } else {
-                    // In case of not able to tell value missing (which infoArray[index] = NULL_FLAG) or value = NULL_FLAG,
-                    // We use the highest bit of long value to indicate that the infoArray[index]
-                    // is actually value (when positive) or position of value (mask the highest bit to be one 1)
+                    // 我们用 long[] 来装载 number 的，value，用 NULL_FLAG 来标记位于index的位置不存在value。
+                    // 为了区分 infoArray[index] 保存的是 NULL_FLAG 还是 value == NULL_FLAG,
+                    // 我们用最高的 1 bit 来标识 infoArray[index] 所保存是 “value” 还是 “value的位置”
+                    // 1. 最高bit为0，则 infoArray[index] 保存的是 value
+                    // 2. 最高bit为1, 则 infoArray[index] 保存的是 value 的位置
 
-                    // little end, the high 8 bits at the last byte
+                    // 当前用的时小端编码，高8位在 number 的最后一个字节
                     byte b8 = buffer.hb[buffer.position + 7];
                     if ((b8 & TagFormat.BIG_INDEX_MASK) == 0) {
                         infoArray[index] = buffer.readLong();
@@ -184,7 +243,6 @@ public final class PackDecoder {
             }
         }
 
-        // should be equal
         if (buffer.position != buffer.limit) {
             throw new IllegalArgumentException("invalid pack data");
         }
@@ -226,7 +284,7 @@ public final class PackDecoder {
 
     private char[] getCharBuffer(int len) {
         if (pool.charBuffer == null) {
-            int size = Math.max(len, PackConfig.CHAR_BUFFER_SIZE);
+            int size = Math.max(len, CharArrayPool.CHAR_BUFFER_SIZE);
             pool.charBuffer = CharArrayPool.getArray(size);
         } else if (pool.charBuffer.length < len) {
             CharArrayPool.recycleArray(pool.charBuffer);
@@ -236,10 +294,8 @@ public final class PackDecoder {
     }
 
     private long getInfo(int index) {
+        checkState();
         if (maxIndex < 0) {
-            if (buffer == null) {
-                throw new IllegalStateException("Decoder had been recycled");
-            }
             parseBuffer();
         }
         if (index > maxIndex) {
@@ -349,7 +405,6 @@ public final class PackDecoder {
      * Transfer char array to String constructor, JDK will just call
      * 'this.value = Arrays.copyOfRange(value, offset, offset+count);',
      * in this way we could avoid allocating char array buffer, comparing with 'new String(byte[])'.
-     *
      * And we could reuse char array buffer by {@link DecoderPool#charBuffer} and {@link CharArrayPool}
      */
     private String decodeStr(int offset, int len) {
@@ -384,11 +439,11 @@ public final class PackDecoder {
         return new String(buf, 0, j);
     }
 
-    public <T> T getPackable(int index, PackCreator<T> creator) {
-        return getPackable(index, creator, null);
+    public <T> T getObject(int index, Packer<T> packer) {
+        return getObject(index, packer, null);
     }
 
-    public <T> T getPackable(int index, PackCreator<T> creator, T defValue) {
+    public <T> T getObject(int index, Packer<T> packer, T defValue) {
         long info = getInfo(index);
         if (info == NULL_FLAG) {
             return defValue;
@@ -396,9 +451,49 @@ public final class PackDecoder {
         int offset = (int) (info >>> 32);
         int len = (int) (info & INT_MASK);
         PackDecoder decoder = pool.getDecoder(offset, len);
-        T object = creator.decode(decoder);
+        T object = packer.unpack(decoder);
         pool.recycleDecoder(decoder);
         return object;
+    }
+
+    public boolean[] getBooleanArray(int index) {
+        long info = getInfo(index);
+        if (info == PackDecoder.NULL_FLAG) {
+            return null;
+        }
+        int len = (int) (info & PackDecoder.INT_MASK);
+        if (len == 0) {
+            return new boolean[0];
+        }
+
+        buffer.position = (int) (info >>> 32);
+        boolean[] a;
+        if (len == 1) {
+            byte b = buffer.readByte();
+            int n = (b & 0xFF) >>> 5;
+            a = new boolean[n];
+            for (int i = 0; i < n; i++) {
+                a[i] = (b & 0x1) != 0;
+                b >>= 1;
+            }
+        } else {
+            int remain = buffer.readByte();
+            if ((remain >> 3) != 0) {
+                throw new IllegalStateException("remain overflow");
+            }
+            int byteCount = len - 1;
+            int n = (byteCount << 3) - (remain > 0 ? 8 - remain : 0);
+            a = new boolean[n];
+            for (int i = 0; i < n; i += 8) {
+                int b = buffer.readByte() & 0xFF;
+                int j = i;
+                while (b != 0) {
+                    a[j++] = (b & 0x1) != 0;
+                    b >>= 1;
+                }
+            }
+        }
+        return a;
     }
 
     public byte[] getByteArray(int index) {
@@ -428,11 +523,7 @@ public final class PackDecoder {
             return null;
         }
         int n = setPosAndGetLen(info, 0x3) >> 2;
-        int[] value = new int[n];
-        for (int i = 0; i < n; i++) {
-            value[i] = buffer.readInt();
-        }
-        return value;
+        return wrapIntArray(buffer, n);
     }
 
     public long[] getLongArray(int index) {
@@ -441,11 +532,7 @@ public final class PackDecoder {
             return null;
         }
         int n = setPosAndGetLen(info, 0x7) >> 3;
-        long[] value = new long[n];
-        for (int i = 0; i < n; i++) {
-            value[i] = buffer.readLong();
-        }
-        return value;
+        return wrapLongArray(buffer, n);
     }
 
     public float[] getFloatArray(int index) {
@@ -485,7 +572,7 @@ public final class PackDecoder {
     }
 
     String takeString() {
-        int len = buffer.readVarint32();
+        int len = buffer.readVarInt32();
         if (len < 0) {
             return null;
         }
@@ -499,31 +586,32 @@ public final class PackDecoder {
         return str;
     }
 
-    public <T> T[] getPackableArray(int index, PackArrayCreator<T> creator) {
-        int n = getSize(index);
-        if (n < 0) return null;
-        T[] value = creator.newArray(n);
-        for (int i = 0; i < n; i++) {
-            value[i] = takePackable(creator);
-        }
-        return value;
+    /**
+     * 获取对象数组
+     *
+     * @param index 编哈
+     * @param packer 解码器
+     * @param array 可以传一个空数组，因为 List 转 Array 需要类型信息。
+     */
+    public <T> T[] getObjectArray(int index, Packer<T> packer, T[] array) {
+        List<T> list = getObjectList(index, packer);
+        return (list == null) ? null : list.toArray(array);
     }
 
-    <T> T takePackable(PackCreator<T> creator) {
-        T t;
+    <T> T takeObject(Packer<T> packer) {
         short a = buffer.readShort();
-        if (a == PackConfig.NULL_PACKABLE) {
-            t = null;
+        if (a == PackConfig.NULL_OBJECT_FLAG) {
+            return null;
         } else {
             int len = a >= 0 ? a : ((a & 0x7fff) << 16) | (buffer.readShort() & 0xffff);
             int offset = buffer.position;
             buffer.checkBound(offset, len);
             PackDecoder decoder = pool.getDecoder(offset, len);
-            t = creator.decode(decoder);
+            T t = packer.unpack(decoder);
             pool.recycleDecoder(decoder);
             buffer.position += len;
+            return t;
         }
-        return t;
     }
 
     public List<Integer> getIntList(int index) {
@@ -570,9 +658,14 @@ public final class PackDecoder {
         return Arrays.asList(b);
     }
 
-    public <T> List<T> getPackableList(int index, PackArrayCreator<T> creator) {
-        T[] a = getPackableArray(index, creator);
-        return a == null ? null : Arrays.asList(a);
+    public <T> List<T> getObjectList(int index, Packer<T> packer) {
+        int n = getSize(index);
+        if (n < 0) return null;
+        List<T> value = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            value.add(takeObject(packer));
+        }
+        return value;
     }
 
     public List<String> getStringList(int index) {
@@ -590,144 +683,78 @@ public final class PackDecoder {
             return 0;
         }
         buffer.position = (int) (info >>> 32);
-        int n = buffer.readVarint32();
-        if (n < 0 || n > PackConfig.MAX_OBJECT_ARRAY_SIZE) {
+        int n = buffer.readVarInt32();
+        if (n < 0 || n > PackConfig.maxObjectArraySize) {
             throw new IllegalStateException("invalid size of object array");
         }
         return n;
     }
 
-    private static int getInitCapacity(int n) {
-        // HashMap's DEFAULT_LOAD_FACTOR = 0.75f
-        // so set initialCapacity to be n/0.75+1 (n*4/3+1) could make HashMap not to extend capacity.
-        return (n << 2) / 3 + 1;
-    }
-
-    public Map<String, String> getStr2Str(int index) {
-        int n = getSize(index);
-        if (n < 0) return null;
-        Map<String, String> map = new HashMap<>(getInitCapacity(n));
-        for (int i = 0; i < n; i++) {
-            map.put(takeString(), takeString());
-        }
-        return map;
-    }
-
-    public <T> Map<String, T> getStr2Pack(int index, PackCreator<T> creator) {
-        int n = getSize(index);
-        if (n < 0) return null;
-        Map<String, T> map = new HashMap<>(getInitCapacity(n));
-        for (int i = 0; i < n; i++) {
-            map.put(takeString(), takePackable(creator));
-        }
-        return map;
-    }
-
-    @SuppressWarnings("unchecked")
-    public Map<String, Integer> getStr2Int(int index) {
-        return getStr2Number(index, NumberType.INT);
-    }
-
-    @SuppressWarnings("unchecked")
-    public Map<String, Long> getStr2Long(int index) {
-        return getStr2Number(index, NumberType.LONG);
-    }
-
-    @SuppressWarnings("unchecked")
-    public Map<String, Double> getStr2Double(int index) {
-        return getStr2Number(index, NumberType.DOUBLE);
-    }
-
-    @SuppressWarnings("unchecked")
-    public Map<String, Float> getStr2Float(int index) {
-        return getStr2Number(index, NumberType.FLOAT);
+    /**
+     * getMap 不能像putMap那样根据map中的元素获取类型，所以只能手动传入了。
+     */
+    public <K, V> Map<K, V> getMap(int index, Class<K> keyType, Class<V> valueType) {
+        return getMap(index, keyType, valueType, null, null);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private Map getStr2Number(int index, int type) {
+    public <K, V> Map<K, V> getMap(
+            int index,
+            Class<K> keyType,
+            Class<V> valueType,
+            Packer<K> keyPacker,
+            Packer<V> valuePacker
+    ) {
         int n = getSize(index);
         if (n < 0) return null;
-        Map m = new HashMap<String, Object>(getInitCapacity(n));
-        if (type == NumberType.INT) {
-            for (int i = 0; i < n; i++) {
-                m.put(takeString(), buffer.readInt());
-            }
-        } else if (type == NumberType.LONG) {
-            for (int i = 0; i < n; i++) {
-                m.put(takeString(), buffer.readLong());
-            }
-        } else if (type == NumberType.FLOAT) {
-            for (int i = 0; i < n; i++) {
-                m.put(takeString(), buffer.readFloat());
-            }
-        } else if (type == NumberType.DOUBLE) {
-            for (int i = 0; i < n; i++) {
-                m.put(takeString(), buffer.readDouble());
-            }
-        } else {
-            throw new IllegalArgumentException("wrong type:" + type);
-        }
-        return m;
-    }
 
-    public Map<Integer, Integer> getInt2Int(int index) {
-        int n = getSize(index);
-        if (n < 0) return null;
-        Map<Integer, Integer> map = new HashMap<>(getInitCapacity(n));
+        // HashMap's DEFAULT_LOAD_FACTOR = 0.75f
+        // so set initialCapacity to be n/0.75+1 (n*4/3+1) could make HashMap not to extend capacity.
+        int initCapacity = (n << 2) / 3 + 1;
+        Map map = new HashMap<K, V>(initCapacity);
         for (int i = 0; i < n; i++) {
-            map.put(buffer.readInt(), buffer.readInt());
-        }
-        return map;
-    }
-
-    public Map<Integer, String> getInt2Str(int index) {
-        int n = getSize(index);
-        if (n < 0) return null;
-        Map<Integer, String> map = new HashMap<>(getInitCapacity(n));
-        for (int i = 0; i < n; i++) {
-            map.put(buffer.readInt(), takeString());
-        }
-        return map;
-    }
-
-    public boolean[] getBooleanArray(int index) {
-        long info = getInfo(index);
-        if (info == PackDecoder.NULL_FLAG) {
-            return null;
-        }
-        int len = (int) (info & PackDecoder.INT_MASK);
-        if (len == 0) {
-            return new boolean[0];
-        }
-
-        buffer.position = (int) (info >>> 32);
-        boolean[] a;
-        if (len == 1) {
-            byte b = buffer.readByte();
-            int n = (b & 0xFF) >>> 5;
-            a = new boolean[n];
-            for (int i = 0; i < n; i++) {
-                a[i] = (b & 0x1) != 0;
-                b >>= 1;
-            }
-        } else {
-            int remain = buffer.readByte();
-            if ((remain >> 3) != 0) {
-                throw new IllegalStateException("remain overflow");
-            }
-            int byteCount = len - 1;
-            int n = (byteCount << 3) - (remain > 0 ? 8 - remain : 0);
-            a = new boolean[n];
-            for (int i = 0; i < n; i += 8) {
-                int b = buffer.readByte() & 0xFF;
-                int j = i;
-                while (b != 0) {
-                    a[j++] = (b & 0x1) != 0;
-                    b >>= 1;
+            Object key;
+            if (keyPacker != null) {
+                key = takeObject(keyPacker);
+            } else if (keyType == String.class) {
+                key = takeString();
+            } else if (keyType == Integer.class) {
+                key = buffer.readInt();
+            } else if (keyType == Long.class) {
+                key = buffer.readLong();
+            } else {
+                if (PackConfig.ignoreUnknownType) {
+                    return null;
                 }
+                String keyTypeName = (keyType == null) ? "null" : keyType.getSimpleName();
+                throw new IllegalArgumentException("Unsupported type of key: " + keyTypeName);
             }
+
+            Object value;
+            if (valuePacker != null) {
+                value = takeObject(valuePacker);
+            } else if (valueType == String.class) {
+                value = takeString();
+            } else if (valueType == Integer.class) {
+                value = buffer.readInt();
+            } else if (valueType == Long.class) {
+                value = buffer.readLong();
+            } else if (valueType == Double.class) {
+                value = buffer.readDouble();
+            } else if (valueType == Float.class) {
+                value = buffer.readFloat();
+            } else if (valueType == Boolean.class) {
+                value = buffer.readByte() == 1;
+            } else {
+                if (PackConfig.ignoreUnknownType) {
+                    return null;
+                }
+                String valueTypeName = (valueType == null) ? "null" : valueType.getSimpleName();
+                throw new IllegalArgumentException("Unsupported type of value: " + valueTypeName);
+            }
+            map.put(key, value);
         }
-        return a;
+        return map;
     }
 }
 
