@@ -134,9 +134,9 @@ public void test2() {
 
 | | 数据大小(byte) 
 ---|---
-packable | 2537191 (57%)
-protobuf  | 2614001 (59%)
-gson       | 4407901 (100%)
+packable | 2564756 (56%)
+protobuf  | 2627081 (59%)
+gson       | 4427344 (100%)
 
 packable和protobuf大小相近（packable略小），约为gson的57%。
 
@@ -147,17 +147,10 @@ packable和protobuf大小相近（packable略小），约为gson的57%。
 
 | |序列化耗时 (ms)| 反序列化耗时(ms)
 ---|---|---
-packable |9|8
-protobuf |19 |11
-gson     | 67 |46
+packable | 8 | 8
+protobuf |16 | 17
+gson     | 58 | 50
 
-2. 荣耀20S
-
-| |序列化耗时 (ms)| 反序列化耗时(ms)
----|---|---
-packable |32 | 21
-protobuf  | 81 | 38
-gson    | 190 | 128
 
 
 ## 4. 关联文档

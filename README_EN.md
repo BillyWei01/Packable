@@ -23,7 +23,7 @@ Here is usage of Java version,  and APIs on other platform are similar to Java.
 The jar has been published to Maven Central：
 ```gradle
 dependencies {
-    implementation 'io.github.billywei01:packable:1.1.0'
+    implementation 'io.github.billywei01:packable:2.0.1'
 }
 ```
 
@@ -149,7 +149,7 @@ Space of serialization bytes:
 
 | | Space (byte) 
 ---|---
-packable | 2564765 (58%)
+packable | 2564756 (56%)
 protobuf  | 2627081 (59%)
 gson       | 4427344 (100%)
 
@@ -159,18 +159,9 @@ Process time:
 
 | |Serialization (ms)| Deserialization (ms)
 ---|---|---
-packable |9|8
-protobuf |19 |11
-gson     | 67 |46
-
-2. Huawei Honor 20S
-
-| |Serialization (ms)| Deserialization (ms)
----|---|---
-packable |32 | 21
-protobuf  | 81 | 38
-gson    | 190 | 128
-
+packable | 8 | 8
+protobuf |16 | 17
+gson     | 58 | 50
 
 # 4. Format
 See: [Packable Format](format.md)

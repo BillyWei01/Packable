@@ -31,10 +31,12 @@ final class DecodeBuffer {
     }
 
     public int readInt() {
-        return (((hb[position++] & 0xff)) |
-                ((hb[position++] & 0xff) << 8) |
-                ((hb[position++] & 0xff) << 16) |
-                ((hb[position++]) << 24));
+        int value = (((hb[position] & 0xff)) |
+                ((hb[position + 1] & 0xff) << 8) |
+                ((hb[position + 2] & 0xff) << 16) |
+                ((hb[position + 3]) << 24));
+        position += 4;
+        return value;
     }
 
     public int readVarInt32() {
@@ -51,14 +53,14 @@ final class DecodeBuffer {
     }
 
     public long readLong(int i) {
-        return (((long) hb[i++] & 0xff) |
-                (((long) hb[i++] & 0xff) << 8) |
-                (((long) hb[i++] & 0xff) << 16) |
-                (((long) hb[i++] & 0xff) << 24) |
-                (((long) hb[i++] & 0xff) << 32) |
-                (((long) hb[i++] & 0xff) << 40) |
-                (((long) hb[i++] & 0xff) << 48) |
-                (((long) hb[i]) << 56));
+        return (((long) hb[i] & 0xff) |
+                (((long) hb[i+1] & 0xff) << 8) |
+                (((long) hb[i+2] & 0xff) << 16) |
+                (((long) hb[i+3] & 0xff) << 24) |
+                (((long) hb[i+4] & 0xff) << 32) |
+                (((long) hb[i+5] & 0xff) << 40) |
+                (((long) hb[i+6] & 0xff) << 48) |
+                (((long) hb[i+7]) << 56));
     }
 
     public long readLong() {

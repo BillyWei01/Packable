@@ -32,7 +32,7 @@ public final class PackEncoder {
         return encoder.toBytes();
     }
 
-    public static <T> byte[] encodeList(List<T> value, Packer<T> packer) {
+    public static <T> byte[] encodeObjectList(List<T> value, Packer<T> packer) {
         if (value.isEmpty()) return EMPTY_ARRAY;
         PackEncoder encoder = new PackEncoder();
         encoder.buffer.writeVarInt32(value.size());
@@ -62,6 +62,16 @@ public final class PackEncoder {
         encoder.buffer.writeVarInt32(value.length);
         for (long e : value) {
             encoder.buffer.writeLong(e);
+        }
+        return encoder.toBytes();
+    }
+
+    public static byte[] encodeStringList(List<String> value) {
+        if(value == null || value.isEmpty()) return EMPTY_ARRAY;
+        PackEncoder encoder = new PackEncoder();
+        encoder.buffer.writeVarInt32(value.size());
+        for(String e : value){
+            encoder.wrapString(e);
         }
         return encoder.toBytes();
     }
@@ -281,7 +291,7 @@ public final class PackEncoder {
             encodeStr(str);
             int len = buffer.position - start;
 
-            // 编码结束，得到真正的占用空间大小，和预估的大小对，不想等则移动value腾出空间
+            // 编码结束，得到真正的占用空间大小，和预估的大小对比，不相等则移动value腾出空间
             int realSizeOfLen = EncodeBuffer.getVarInt32Size(len);
             if (realSizeOfLen != sizeOfLen) {
                 int diff = realSizeOfLen - sizeOfLen;
@@ -327,8 +337,7 @@ public final class PackEncoder {
                 char c2 = s.charAt(i++);
 
                 // 代理对转码点（CodePoint)
-                // 合并了一些计算项目，得到如今这条转换公式
-                int cp = (c << 10) + c2 + 0xFCA02400;
+                int cp = Character.toCodePoint(c, c2);
                 buf[j++] = (byte) (0xF0 | (cp >>> 18));
                 buf[j++] = (byte) (0x80 | (0x3F & (cp >>> 12)));
                 buf[j++] = (byte) (0x80 | (0x3F & (cp >>> 6)));

@@ -114,20 +114,6 @@ public final class PackDecoder {
         return t;
     }
 
-    public static <T> List<T> decodeList(byte[] bytes, Packer<T> packer) {
-        if (bytes == null || bytes.length == 0)
-            return new ArrayList<>();
-        PackDecoder decoder = new PackDecoder(bytes);
-        DecodeBuffer buffer = decoder.buffer;
-        int size = buffer.readVarInt32();
-        List<T> value = new ArrayList<T>(size);
-        for (int i = 0; i < size; i++) {
-            value.add(decoder.takeObject(packer));
-        }
-        decoder.recycle();
-        return value;
-    }
-
     public static int[] decodeIntArray(byte[] bytes) {
         if (bytes == null || bytes.length == 0) return new int[0];
         DecodeBuffer buffer = new DecodeBuffer(bytes, 0, bytes.length);
@@ -141,6 +127,35 @@ public final class PackDecoder {
         int size = buffer.readVarInt32();
         return wrapLongArray(buffer, size);
     }
+
+    public static  List<String> decodeStringList(byte[] bytes) {
+        if (bytes == null || bytes.length == 0)
+            return new ArrayList<>();
+        PackDecoder decoder = new PackDecoder(bytes);
+        DecodeBuffer buffer = decoder.buffer;
+        int size = buffer.readVarInt32();
+        List<String> value = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            value.add(decoder.takeString());
+        }
+        decoder.recycle();
+        return value;
+    }
+
+    public static <T> List<T> decodeObjectList(byte[] bytes, Packer<T> packer) {
+        if (bytes == null || bytes.length == 0)
+            return new ArrayList<>();
+        PackDecoder decoder = new PackDecoder(bytes);
+        DecodeBuffer buffer = decoder.buffer;
+        int size = buffer.readVarInt32();
+        List<T> value = new ArrayList<T>(size);
+        for (int i = 0; i < size; i++) {
+            value.add(decoder.takeObject(packer));
+        }
+        decoder.recycle();
+        return value;
+    }
+
 
     private static int[] wrapIntArray(DecodeBuffer buffer , int n) {
         int[] value = new int[n];
@@ -429,6 +444,14 @@ public final class PackDecoder {
                 byte b3 = src[i++];
                 byte b4 = src[i++];
                 int cp = ((b1 & 0x07) << 18) | ((b2 & 0x3F) << 12) | ((b3 & 0x3F) << 6) | (b4 & 0x3F);
+                /*
+                 high = (char)(MIN_HIGH_SURROGATE  + (codePoint - MIN_SUPPLEMENTARY_CODE_POINT) >>> 10))
+                      = (char)((MIN_HIGH_SURROGATE - (MIN_SUPPLEMENTARY_CODE_POINT >>> 10)) + (codePoint >>> 10))
+                      = (char) (0xD7C0 + (cp >>> 10))
+
+                 low  = (char) (MIN_LOW_SURROGATE + (codePoint & 0x3ff))
+                      = (char) (0xDC00 + (cp & 0x3FF))
+                 */
                 buf[j++] = (char) (0xD7C0 + (cp >>> 10));
                 buf[j++] = (char) (0xDC00 + (cp & 0x3FF));
             }

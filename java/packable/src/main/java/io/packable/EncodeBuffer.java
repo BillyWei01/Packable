@@ -16,27 +16,29 @@ final class EncodeBuffer {
     }
 
     public void writeShort(int i, short v) {
-        hb[i++] = (byte) v;
-        hb[i] = (byte) (v >> 8);
+        hb[i] = (byte) v;
+        hb[i + 1] = (byte) (v >> 8);
     }
 
     public void writeShort(short v) {
-        hb[position++] = (byte) v;
-        hb[position++] = (byte) (v >> 8);
+        hb[position] = (byte) v;
+        hb[position + 1] = (byte) (v >> 8);
+        position += 2;
     }
 
     public void writeInt(int v) {
-        hb[position++] = (byte) v;
-        hb[position++] = (byte) (v >> 8);
-        hb[position++] = (byte) (v >> 16);
-        hb[position++] = (byte) (v >> 24);
+        hb[position] = (byte) v;
+        hb[position + 1] = (byte) (v >> 8);
+        hb[position + 2] = (byte) (v >> 16);
+        hb[position + 3] = (byte) (v >> 24);
+        position += 4;
     }
 
     public void writeInt(int i, int v) {
-        hb[i++] = (byte) v;
-        hb[i++] = (byte) (v >> 8);
-        hb[i++] = (byte) (v >> 16);
-        hb[i] = (byte) (v >> 24);
+        hb[i] = (byte) v;
+        hb[i + 1] = (byte) (v >> 8);
+        hb[i + 2] = (byte) (v >> 16);
+        hb[i + 3] = (byte) (v >> 24);
     }
 
     public static int getVarInt32Size(int v) {
@@ -53,11 +55,12 @@ final class EncodeBuffer {
     }
 
     public void writeVarIntNegative1() {
-        hb[position++] = -1;
-        hb[position++] = -1;
-        hb[position++] = -1;
-        hb[position++] = -1;
-        hb[position++] = 15;
+        hb[position] = -1;
+        hb[position + 1] = -1;
+        hb[position + 2] = -1;
+        hb[position + 3] = -1;
+        hb[position + 4] = 15;
+        position+=4;
     }
 
     public int writeVarInt32(int i, int v) {
@@ -74,14 +77,15 @@ final class EncodeBuffer {
     }
 
     public void writeLong(long v) {
-        hb[position++] = (byte) v;
-        hb[position++] = (byte) (v >> 8);
-        hb[position++] = (byte) (v >> 16);
-        hb[position++] = (byte) (v >> 24);
-        hb[position++] = (byte) (v >> 32);
-        hb[position++] = (byte) (v >> 40);
-        hb[position++] = (byte) (v >> 48);
-        hb[position++] = (byte) (v >> 56);
+        hb[position] = (byte) v;
+        hb[position + 1] = (byte) (v >> 8);
+        hb[position + 2] = (byte) (v >> 16);
+        hb[position + 3] = (byte) (v >> 24);
+        hb[position + 4] = (byte) (v >> 32);
+        hb[position + 5] = (byte) (v >> 40);
+        hb[position + 6] = (byte) (v >> 48);
+        hb[position + 7] = (byte) (v >> 56);
+        position += 8;
     }
 
     public void writeFloat(float v) {
