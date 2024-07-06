@@ -2,14 +2,12 @@ plugins {
     id 'java'
 }
 
-sourceCompatibility = 1.8
-
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testImplementation group: 'junit', name: 'junit', version: '4.13.1'
     implementation project(":packable")
     implementation 'com.google.protobuf:protobuf-java:3.13.0'
     implementation 'com.google.code.gson:gson:2.8.6'
