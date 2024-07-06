@@ -103,13 +103,13 @@ public final class PackDecoder {
         this.pool = pool;
     }
 
-    public static <T> T decode(byte[] bytes, Packer<T> packer) {
-        return decode(bytes, 0, bytes.length, packer);
+    public static <T> T decode(byte[] bytes, TypeAdapter<T> adapter) {
+        return decode(bytes, 0, bytes.length, adapter);
     }
 
-    public static <T> T decode(byte[] bytes, int offset, int len, Packer<T> packer) {
+    public static <T> T decode(byte[] bytes, int offset, int len, TypeAdapter<T> adapter) {
         PackDecoder decoder = new PackDecoder(bytes, offset, len);
-        T t = packer.unpack(decoder);
+        T t = adapter.decode(decoder);
         decoder.recycle();
         return t;
     }
@@ -142,7 +142,7 @@ public final class PackDecoder {
         return value;
     }
 
-    public static <T> List<T> decodeObjectList(byte[] bytes, Packer<T> packer) {
+    public static <T> List<T> decodeObjectList(byte[] bytes, TypeAdapter<T> adapter) {
         if (bytes == null || bytes.length == 0)
             return new ArrayList<>();
         PackDecoder decoder = new PackDecoder(bytes);
@@ -150,7 +150,7 @@ public final class PackDecoder {
         int size = buffer.readVarInt32();
         List<T> value = new ArrayList<T>(size);
         for (int i = 0; i < size; i++) {
-            value.add(decoder.takeObject(packer));
+            value.add(decoder.takeObject(adapter));
         }
         decoder.recycle();
         return value;
@@ -299,11 +299,10 @@ public final class PackDecoder {
 
     private char[] getCharBuffer(int len) {
         if (pool.charBuffer == null) {
-            int size = Math.max(len, CharArrayPool.CHAR_BUFFER_SIZE);
-            pool.charBuffer = CharArrayPool.getArray(size);
+            pool.charBuffer = CharArrayPool.getArray(len);
         } else if (pool.charBuffer.length < len) {
             CharArrayPool.recycleArray(pool.charBuffer);
-            pool.charBuffer = CharArrayPool.getArray(len);
+            pool.charBuffer = new char[len];
         }
         return pool.charBuffer;
     }
@@ -462,11 +461,11 @@ public final class PackDecoder {
         return new String(buf, 0, j);
     }
 
-    public <T> T getObject(int index, Packer<T> packer) {
-        return getObject(index, packer, null);
+    public <T> T getObject(int index, TypeAdapter<T> adapter) {
+        return getObject(index, adapter, null);
     }
 
-    public <T> T getObject(int index, Packer<T> packer, T defValue) {
+    public <T> T getObject(int index, TypeAdapter<T> adapter, T defValue) {
         long info = getInfo(index);
         if (info == NULL_FLAG) {
             return defValue;
@@ -474,7 +473,7 @@ public final class PackDecoder {
         int offset = (int) (info >>> 32);
         int len = (int) (info & INT_MASK);
         PackDecoder decoder = pool.getDecoder(offset, len);
-        T object = packer.unpack(decoder);
+        T object = adapter.decode(decoder);
         pool.recycleDecoder(decoder);
         return object;
     }
@@ -613,15 +612,18 @@ public final class PackDecoder {
      * 获取对象数组
      *
      * @param index 编哈
-     * @param packer 解码器
-     * @param array 可以传一个空数组，因为 List 转 Array 需要类型信息。
+     * @param adapter 解码器
+     * @param array 可以传一个空数组。
+     *              因为 List 转 Array 需要类型信息, 而List本身被擦除了范型，所以需要传一个数组来构建Array。
+     * @param <T> 类型
+     * @return 对象数组
      */
-    public <T> T[] getObjectArray(int index, Packer<T> packer, T[] array) {
-        List<T> list = getObjectList(index, packer);
+    public <T> T[] getObjectArray(int index, TypeAdapter<T> adapter, T[] array) {
+        List<T> list = getObjectList(index, adapter);
         return (list == null) ? null : list.toArray(array);
     }
 
-    <T> T takeObject(Packer<T> packer) {
+    <T> T takeObject(TypeAdapter<T> adapter) {
         short a = buffer.readShort();
         if (a == PackConfig.NULL_OBJECT_FLAG) {
             return null;
@@ -630,7 +632,7 @@ public final class PackDecoder {
             int offset = buffer.position;
             buffer.checkBound(offset, len);
             PackDecoder decoder = pool.getDecoder(offset, len);
-            T t = packer.unpack(decoder);
+            T t = adapter.decode(decoder);
             pool.recycleDecoder(decoder);
             buffer.position += len;
             return t;
@@ -681,12 +683,12 @@ public final class PackDecoder {
         return Arrays.asList(b);
     }
 
-    public <T> List<T> getObjectList(int index, Packer<T> packer) {
+    public <T> List<T> getObjectList(int index, TypeAdapter<T> adapter) {
         int n = getSize(index);
         if (n < 0) return null;
         List<T> value = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
-            value.add(takeObject(packer));
+            value.add(takeObject(adapter));
         }
         return value;
     }
@@ -715,6 +717,13 @@ public final class PackDecoder {
 
     /**
      * getMap 不能像putMap那样根据map中的元素获取类型，所以只能手动传入了。
+     *
+     * @param <K> key范型
+     * @param <V> value范型
+     * @param index 下标
+     * @param keyType key类型
+     * @param valueType value类型
+     * @return Map对象
      */
     public <K, V> Map<K, V> getMap(int index, Class<K> keyType, Class<V> valueType) {
         return getMap(index, keyType, valueType, null, null);
@@ -725,8 +734,8 @@ public final class PackDecoder {
             int index,
             Class<K> keyType,
             Class<V> valueType,
-            Packer<K> keyPacker,
-            Packer<V> valuePacker
+            TypeAdapter<K> keyTypeAdapter,
+            TypeAdapter<V> valueTypeAdapter
     ) {
         int n = getSize(index);
         if (n < 0) return null;
@@ -737,8 +746,8 @@ public final class PackDecoder {
         Map map = new HashMap<K, V>(initCapacity);
         for (int i = 0; i < n; i++) {
             Object key;
-            if (keyPacker != null) {
-                key = takeObject(keyPacker);
+            if (keyTypeAdapter != null) {
+                key = takeObject(keyTypeAdapter);
             } else if (keyType == String.class) {
                 key = takeString();
             } else if (keyType == Integer.class) {
@@ -754,8 +763,8 @@ public final class PackDecoder {
             }
 
             Object value;
-            if (valuePacker != null) {
-                value = takeObject(valuePacker);
+            if (valueTypeAdapter != null) {
+                value = takeObject(valueTypeAdapter);
             } else if (valueType == String.class) {
                 value = takeString();
             } else if (valueType == Integer.class) {

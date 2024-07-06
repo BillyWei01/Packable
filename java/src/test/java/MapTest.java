@@ -34,10 +34,10 @@ public class MapTest {
         }
 
         PackEncoder encoder = new PackEncoder();
-        byte[] bytes = encoder.putMap(0, a, null, TEST_VO_PACKER).toBytes();
+        byte[] bytes = encoder.putMap(0, a, null, TEST_VO_ADAPTER).toBytes();
 
         PackDecoder decoder = new PackDecoder(bytes);
-        Map<String, TestVo> b = decoder.getMap(0, String.class, TestVo.class, null, TEST_VO_PACKER);
+        Map<String, TestVo> b = decoder.getMap(0, String.class, TestVo.class, null, TEST_VO_ADAPTER);
 
         Assert.assertEquals(a, b);
 }
@@ -142,15 +142,15 @@ public class MapTest {
         Assert.assertEquals(a, b);
     }
 
-    private static final Packer<TestVo> TEST_VO_PACKER = new Packer<TestVo>() {
+    private static final TypeAdapter<TestVo> TEST_VO_ADAPTER = new TypeAdapter<TestVo>() {
         @Override
-        public void pack(PackEncoder encoder, TestVo target) {
+        public void encode(PackEncoder encoder, TestVo target) {
             encoder.putInt(0, target.a)
                     .putLong(1, target.b);
         }
 
         @Override
-        public TestVo unpack(PackDecoder decoder) {
+        public TestVo decode(PackDecoder decoder) {
             return new TestVo(
                     decoder.getInt(0),
                     decoder.getLong(1)

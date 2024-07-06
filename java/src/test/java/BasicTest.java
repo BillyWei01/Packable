@@ -10,15 +10,15 @@ import java.util.Arrays;
 import java.util.List;
 
 public class BasicTest {
-    public static final Packer<Person> PERSON_PACKER = new Packer<Person>(){
+    public static final TypeAdapter<Person> PERSON_ADAPTER = new TypeAdapter<Person>(){
         @Override
-        public void pack(PackEncoder encoder, Person target) {
+        public void encode(PackEncoder encoder, Person target) {
             encoder.putString(0, target.name)
                     .putInt(1, target.age);
         }
 
         @Override
-        public Person unpack(PackDecoder decoder) {
+        public Person decode(PackDecoder decoder) {
             return new Person(
                     decoder.getString(0),
                     decoder.getInt(1)
@@ -29,37 +29,37 @@ public class BasicTest {
     @Test
     public void testPackSimpleObject() {
         Person person = new Person("Tom", 20);
-        byte[] encoded = PackEncoder.encode(person, PERSON_PACKER);
-        Person decoded = PackDecoder.decode(encoded, PERSON_PACKER);
+        byte[] encoded = PackEncoder.encode(person, PERSON_ADAPTER);
+        Person decoded = PackDecoder.decode(encoded, PERSON_ADAPTER);
         Assert.assertEquals(person, decoded);
     }
 
 
-    private static final Packer<Data> DATA_PACKER = new Packer<Data>() {
+    private static final TypeAdapter<Data> DATA_ADAPTER = new TypeAdapter<Data>() {
         @Override
-        public void pack(PackEncoder encoder, Data target) {
+        public void encode(PackEncoder encoder, Data target) {
             encoder.putString(0, target.msg)
-                    .putObjectList(1, target.items, ITEM_PACKER);
+                    .putObjectList(1, target.items, ITEM_ADAPTER);
         }
 
         @Override
-        public Data unpack(PackDecoder decoder) {
+        public Data decode(PackDecoder decoder) {
             Data data = new Data();
             data.msg = decoder.getString(0);
-            data.items = decoder.getObjectList(1, ITEM_PACKER);
+            data.items = decoder.getObjectList(1, ITEM_ADAPTER);
             return data;
         }
     };
 
-    private static final Packer<Item> ITEM_PACKER = new Packer<Item>() {
+    private static final TypeAdapter<Item> ITEM_ADAPTER = new TypeAdapter<Item>() {
         @Override
-        public void pack(PackEncoder encoder, Item target) {
+        public void encode(PackEncoder encoder, Item target) {
             encoder.putInt(0, target.a);
             encoder.putLong(1, target.b);
         }
 
         @Override
-        public Item unpack(PackDecoder decoder) {
+        public Item decode(PackDecoder decoder) {
             return new Item(
                     decoder.getInt(0),
                     decoder.getLong(1)
@@ -77,9 +77,9 @@ public class BasicTest {
         data.msg = "message";
         data.items = itemList;
 
-        byte[] bytes = PackEncoder.encode(data, DATA_PACKER);
+        byte[] bytes = PackEncoder.encode(data, DATA_ADAPTER);
 
-        Data decoded = PackDecoder.decode(bytes, DATA_PACKER);
+        Data decoded = PackDecoder.decode(bytes, DATA_ADAPTER);
 
         Assert.assertEquals(data, decoded);
     }
@@ -111,8 +111,8 @@ public class BasicTest {
         personList.add(new Person("Tom", 20));
         personList.add(new Person("Jerry", 19));
 
-        byte[] encoded = PackEncoder.encodeObjectList(personList, PERSON_PACKER);
-        List<Person> decoded = PackDecoder.decodeObjectList(encoded, PERSON_PACKER);
+        byte[] encoded = PackEncoder.encodeObjectList(personList, PERSON_ADAPTER);
+        List<Person> decoded = PackDecoder.decodeObjectList(encoded, PERSON_ADAPTER);
 
         personList.toArray(new Person[4]);
 

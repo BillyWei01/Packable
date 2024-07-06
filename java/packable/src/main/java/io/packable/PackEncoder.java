@@ -26,18 +26,18 @@ public final class PackEncoder {
         buffer = new EncodeBuffer(array);
     }
 
-    public static <T> byte[] encode(T target, Packer<T> packer) {
+    public static <T> byte[] encode(T target, TypeAdapter<T> adapter) {
         PackEncoder encoder = new PackEncoder();
-        packer.pack(encoder, target);
+        adapter.encode(encoder, target);
         return encoder.toBytes();
     }
 
-    public static <T> byte[] encodeObjectList(List<T> value, Packer<T> packer) {
+    public static <T> byte[] encodeObjectList(List<T> value, TypeAdapter<T> adapter) {
         if (value.isEmpty()) return EMPTY_ARRAY;
         PackEncoder encoder = new PackEncoder();
         encoder.buffer.writeVarInt32(value.size());
         for (T e : value) {
-            encoder.wrapObject(e, packer);
+            encoder.wrapObject(e, adapter);
         }
         return encoder.toBytes();
     }
@@ -79,6 +79,8 @@ public final class PackEncoder {
     /**
      * 获取编码的字节数组。<br>
      * 当调用此方法后，[buffer] 会被回收，请勿再次调用
+     *
+     * @return 序列化后的byte数组
      */
     public byte[] toBytes() {
         checkBufferState();
@@ -347,7 +349,7 @@ public final class PackEncoder {
         buffer.position = j;
     }
 
-    public <T> PackEncoder putObject(int index, T value, Packer<T> packer) {
+    public <T> PackEncoder putObject(int index, T value, TypeAdapter<T> adapter) {
         if (value == null) {
             return this;
         }
@@ -357,7 +359,7 @@ public final class PackEncoder {
         // 预留 4 字节来存放长度，如果最终用不了那么多，则回退
         buffer.position += 4;
         int pValue = buffer.position;
-        packer.pack(this, value);
+        adapter.encode(this, value);
         if (pValue == buffer.position) {
             buffer.position -= 4;
         } else {
@@ -392,12 +394,12 @@ public final class PackEncoder {
         return this;
     }
 
-    public <T> PackEncoder putObjectArray(int index, T[] value, Packer<T> packer) {
+    public <T> PackEncoder putObjectArray(int index, T[] value, TypeAdapter<T> adapter) {
         if (value == null) return this;
         long tagValue = wrapObjectArrayHeader(index, value.length);
         if (tagValue < 0) return this;
         for (T e : value) {
-            wrapObject(e, packer);
+            wrapObject(e, adapter);
         }
         putLen((int) (tagValue >>> 32), (int) tagValue);
         return this;
@@ -419,21 +421,21 @@ public final class PackEncoder {
      * 由于预留两个字节，所以当对象占用空间少于 32768 时，不需要移动位置。
      * 编码 Object 和 String 的长度采用不同的方式，是综合权衡时间和空间的结果。
      */
-    private <T> void wrapObject(T target, Packer<T> packer) {
+    private <T> void wrapObject(T target, TypeAdapter<T> adapter) {
         buffer.checkCapacity(2);
         if (target == null) {
             buffer.writeShort(PackConfig.NULL_OBJECT_FLAG);
         } else {
             int pLen = buffer.position;
             buffer.position += 2;
-            int pPack = buffer.position;
-            packer.pack(this, target);
-            int len = buffer.position - pPack;
+            int pObj = buffer.position;
+            adapter.encode(this, target);
+            int len = buffer.position - pObj;
             if (len <= 0x7fff) {
                 buffer.writeShort(pLen, (short) len);
             } else {
                 buffer.checkCapacity(2);
-                System.arraycopy(buffer.hb, pPack, buffer.hb, pPack + 2, len);
+                System.arraycopy(buffer.hb, pObj, buffer.hb, pObj + 2, len);
                 buffer.position += 2;
                 // 因为 MAX_BUFFER_SIZE = 1 << 30，所以长度不会大于等于 0x7fff0000。
                 // 因此:
@@ -627,13 +629,13 @@ public final class PackEncoder {
         return this;
     }
 
-    public <T> PackEncoder putObjectList(int index, Collection<? extends T> value, Packer<T> packer) {
+    public <T> PackEncoder putObjectList(int index, Collection<? extends T> value, TypeAdapter<T> adapter) {
         if (value == null) return this;
         int size = value.size();
         long tagValue = wrapObjectArrayHeader(index, size);
         if (tagValue < 0) return this;
         for (T e : value) {
-            wrapObject(e, packer);
+            wrapObject(e, adapter);
         }
         putLen((int) (tagValue >>> 32), (int) tagValue);
         return this;
@@ -655,6 +657,9 @@ public final class PackEncoder {
      *
      * @param <K> 支持[Int, Long, String]类型。
      * @param <V> 支持[Boolean, Int, Long, Float, Double, String]类型。
+     * @param index 下标
+     * @param map Map对象
+     * @return PackEncoder
      */
     public <K, V> PackEncoder putMap(int index, Map<K, V> map) {
         return putMap(index, map, null, null);
@@ -665,23 +670,21 @@ public final class PackEncoder {
      *
      * @param <K> 支持[Int, Long, String]类型。
      * @param <V> 支持[Boolean, Int, Long, Float, Double, String]类型。 可通过传 [valuePacker] 支持其他类型。
+     * @param index 下标
+     * @param map Map对象
+     * @param valueTypeAdapter value的打包器
+     * @return PackEncoder
      */
-    public <K, V> PackEncoder putMap(int index, Map<K, V> map, Packer<V> valuePacker) {
-        return putMap(index, map, null, valuePacker);
+    public <K, V> PackEncoder putMap(int index, Map<K, V> map, TypeAdapter<V> valueTypeAdapter) {
+        return putMap(index, map, null, valueTypeAdapter);
     }
 
-    /**
-     * 编码Map
-     *
-     * @param <K> 支持[Int, Long, String]类型。 可通过传 [keyPacker] 支持其他类型。
-     * @param <V> 支持[Boolean, Int, Long, Float, Double, String]类型。 可通过传 [valuePacker] 支持其他类型。
-     */
     @SuppressWarnings("unchecked")
     public <K, V> PackEncoder putMap(
             int index,
             Map<K, V> map,
-            Packer<K> keyPacker,
-            Packer<V> valuePacker
+            TypeAdapter<K> keyAdapter,
+            TypeAdapter<V> valueAdapter
     ) {
         if (map == null) return this;
         map.entrySet().removeIf(entry -> entry.getKey() == null || entry.getValue() == null);
@@ -693,21 +696,21 @@ public final class PackEncoder {
             Class<V> valueType = null;
             Map.Entry<K, V> entry = map.entrySet().iterator().next();
             // 当Packer为null时，从element中获取类型。
-            if (keyPacker == null) {
+            if (keyAdapter == null) {
                 final Class<K> type = (Class<K>) entry.getKey().getClass();
                 if (!map.keySet().stream().allMatch(key -> key.getClass() == type)) {
                     throw new IllegalArgumentException("The key not support multiply types");
                 }
                 keyType = type;
             }
-            if (valuePacker == null) {
+            if (valueAdapter == null) {
                 final Class<V> type = (Class<V>) entry.getValue().getClass();
                 if (!map.values().stream().allMatch(value -> value.getClass() == type)) {
                     throw new IllegalArgumentException("The value not support multiply types");
                 }
                 valueType = type;
             }
-            return putMap(index, map, keyType, valueType, keyPacker, valuePacker);
+            return putMap(index, map, keyType, valueType, keyAdapter, valueAdapter);
         }
         return this;
     }
@@ -717,8 +720,8 @@ public final class PackEncoder {
             Map<K, V> map,
             Class<K> keyType,
             Class<V> valueType,
-            Packer<K> keyPacker,
-            Packer<V> valuePacker
+            TypeAdapter<K> keyAdapter,
+            TypeAdapter<V> valueAdapter
     ) {
         if (map == null) return this;
         int size = map.size();
@@ -728,8 +731,8 @@ public final class PackEncoder {
         int mark = buffer.position;
 
         for (Map.Entry<K, V> entry : map.entrySet()) {
-            if (keyPacker != null) {
-                wrapObject(entry.getKey(), keyPacker);
+            if (keyAdapter != null) {
+                wrapObject(entry.getKey(), keyAdapter);
             } else if (keyType == String.class) {
                 wrapString((String) entry.getKey());
             } else {
@@ -753,8 +756,8 @@ public final class PackEncoder {
                 }
             }
 
-            if (valuePacker != null) {
-                wrapObject(entry.getValue(), valuePacker);
+            if (valueAdapter != null) {
+                wrapObject(entry.getValue(), valueAdapter);
             } else if (valueType == String.class) {
                 wrapString((String) entry.getValue());
             } else {

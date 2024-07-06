@@ -32,11 +32,11 @@ public class Main {
             Gson gson = new Gson();
             long t1 = System.nanoTime();
 
-            byte[] packData = PackEncoder.encode(packResponse, PackVoPackers.RESPONSE_PACKER);
+            byte[] packData = PackEncoder.encode(packResponse, PackVoAdapter.RESPONSE_ADAPTER);
 
             long t2 = System.nanoTime();
 
-            PackVo.Response packResult = PackDecoder.decode(packData, PackVoPackers.RESPONSE_PACKER);
+            PackVo.Response packResult = PackDecoder.decode(packData, PackVoAdapter.RESPONSE_ADAPTER);
 
             long t3 = System.nanoTime();
 
@@ -105,8 +105,8 @@ public class Main {
         try {
             ProtoVo.Response protoResponse = DataGenerator.generateProtoData(n);
             PackVo.Response packResponse = DataGenerator.convertProtoVoToPackVo(protoResponse);
-            byte[] packData = PackEncoder.encode(packResponse, PackVoPackers.RESPONSE_PACKER);
-            PackVo.Response packResult = PackDecoder.decode(packData, PackVoPackers.RESPONSE_PACKER);
+            byte[] packData = PackEncoder.encode(packResponse, PackVoAdapter.RESPONSE_ADAPTER);
+            PackVo.Response packResult = PackDecoder.decode(packData, PackVoAdapter.RESPONSE_ADAPTER);
             if (!packResponse.equals(packResult)) {
                 throw new Exception("packResponse != packResult");
             }

@@ -2,36 +2,36 @@ package com.example;
 
 import io.packable.PackDecoder;
 import io.packable.PackEncoder;
-import io.packable.Packer;
+import io.packable.TypeAdapter;
 
-public class PackVoPackers {
-    public static final Packer<PackVo.Category> CATEGORY_PACKER = new Packer<PackVo.Category>() {
+public class PackVoAdapter {
+    public static final TypeAdapter<PackVo.Category> CATEGORY_ADAPTER = new TypeAdapter<PackVo.Category>() {
         @Override
-        public void pack(PackEncoder encoder, PackVo.Category target) {
+        public void encode(PackEncoder encoder, PackVo.Category target) {
             encoder.putString(0, target.name)
                     .putInt(1, target.level)
                     .putLong(2, target.i_column)
                     .putDouble(3, target.d_column)
                     .putString(4, target.des)
-                    .putObjectArray(5, target.sub_category, CATEGORY_PACKER);
+                    .putObjectArray(5, target.sub_category, CATEGORY_ADAPTER);
         }
 
         @Override
-        public PackVo.Category unpack(PackDecoder decoder) {
+        public PackVo.Category decode(PackDecoder decoder) {
             PackVo.Category c = new PackVo.Category();
             c.name = decoder.getString(0);
             c.level = decoder.getInt(1);
             c.i_column = decoder.getLong(2);
             c.d_column = decoder.getDouble(3);
             c.des = decoder.getString(4);
-            c.sub_category = decoder.getObjectArray(5, CATEGORY_PACKER, new PackVo.Category[0]);
+            c.sub_category = decoder.getObjectArray(5, CATEGORY_ADAPTER, new PackVo.Category[0]);
             return c;
         }
     };
 
-    public static final Packer<PackVo.Data> DATA_PACKER = new Packer<PackVo.Data>() {
+    public static final TypeAdapter<PackVo.Data> DATA_ADAPTER = new TypeAdapter<PackVo.Data>() {
         @Override
-        public void pack(PackEncoder encoder, PackVo.Data target) {
+        public void encode(PackEncoder encoder, PackVo.Data target) {
             encoder.putBoolean(0, target.d_bool)
                     .putFloat(1, target.d_float)
                     .putDouble(2, target.d_double)
@@ -46,7 +46,7 @@ public class PackVoPackers {
                     .putLong(11, target.long_3)
                     .putLong(12, target.long_4)
                     .putLong(13, target.long_5)
-                    .putObject(14, target.d_category, CATEGORY_PACKER)
+                    .putObject(14, target.d_category, CATEGORY_ADAPTER)
                     .putBooleanArray(15, target.bool_array)
                     .putIntArray(16, target.int_array)
                     .putLongArray(17, target.long_array)
@@ -56,7 +56,7 @@ public class PackVoPackers {
         }
 
         @Override
-        public PackVo.Data unpack(PackDecoder decoder) {
+        public PackVo.Data decode(PackDecoder decoder) {
             PackVo.Data d = new PackVo.Data();
             d.d_bool = decoder.getBoolean(0);
             d.d_float = decoder.getFloat(1);
@@ -72,7 +72,7 @@ public class PackVoPackers {
             d.long_3 = decoder.getLong(11);
             d.long_4 = decoder.getLong(12);
             d.long_5 = decoder.getLong(13);
-            d.d_category = decoder.getObject(14, CATEGORY_PACKER);
+            d.d_category = decoder.getObject(14, CATEGORY_ADAPTER);
             d.bool_array = decoder.getBooleanArray(15);
             d.int_array = decoder.getIntArray(16);
             d.long_array = decoder.getLongArray(17);
@@ -83,20 +83,20 @@ public class PackVoPackers {
         }
     };
 
-    public static final Packer<PackVo.Response> RESPONSE_PACKER = new Packer<PackVo.Response>() {
+    public static final TypeAdapter<PackVo.Response> RESPONSE_ADAPTER = new TypeAdapter<PackVo.Response>() {
         @Override
-        public void pack(PackEncoder encoder, PackVo.Response target) {
+        public void encode(PackEncoder encoder, PackVo.Response target) {
             encoder.putInt(0, target.code.ordinal())
                     .putString(1, target.detail)
-                    .putObjectArray(2, target.data, DATA_PACKER);
+                    .putObjectArray(2, target.data, DATA_ADAPTER);
         }
 
         @Override
-        public PackVo.Response unpack(PackDecoder decoder) {
+        public PackVo.Response decode(PackDecoder decoder) {
             PackVo.Response r = new PackVo.Response();
             r.code = PackVo.Result.ARRAY[decoder.getInt(0)];
             r.detail = decoder.getString(1);
-            r.data = decoder.getObjectArray(2, DATA_PACKER, new PackVo.Data[0]);
+            r.data = decoder.getObjectArray(2, DATA_ADAPTER, new PackVo.Data[0]);
             return r;
         }
     };
