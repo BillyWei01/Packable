@@ -24,14 +24,14 @@ Java和Kotlin版本代码已发布到Maven仓库，路径如下：
 java:
 ```gradle
 dependencies {
-    implementation 'io.github.billywei01:packable-java:2.0.1'
+    implementation 'io.github.billywei01:packable-java:2.1.2'
 }
 ```
 
 kotlin:
 ```gradle
 dependencies {
-    implementation 'io.github.billywei01:packable-kotlin:2.0.1'
+    implementation 'io.github.billywei01:packable-kotlin:2.1.2'
 }
 ```
 

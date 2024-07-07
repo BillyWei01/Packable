@@ -25,14 +25,14 @@ The jar has been published to Maven Central：
 java:
 ```gradle
 dependencies {
-    implementation 'io.github.billywei01:packable-java:2.0.1'
+    implementation 'io.github.billywei01:packable-java:2.1.2'
 }
 ```
 
 kotlin:
 ```gradle
 dependencies {
-    implementation 'io.github.billywei01:packable-kotlin:2.0.1'
+    implementation 'io.github.billywei01:packable-kotlin:2.1.2'
 }
 ```
 
