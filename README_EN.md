@@ -32,7 +32,7 @@ dependencies {
 kotlin:
 ```gradle
 dependencies {
-    implementation 'io.github.billywei01:packable-kotlin:2.1.2'
+    implementation 'io.github.billywei01:packable-kotlin:2.1.3'
 }
 ```
 
@@ -67,7 +67,6 @@ object PersonAdapter : TypeAdapter<Person> {
 Serialization / Deserialization：
 
 ```kotlin
-
 private fun testEncodeObject() {
     val person = Person("Tom", 20)
 
@@ -83,8 +82,8 @@ private fun testEncodeObjectList() {
         Person("Mary", 18)
     )
 
-    val encoded = PackEncoder.encodeObjectList(list, PersonAdapter)
-    val decoded = PackDecoder.decodeObjectList(encoded, PersonAdapter)
+    val encoded = PersonAdapter.encodeObjectList(list)
+    val decoded = PersonAdapter.decodeObjectList(encoded)
 
     println("Person list: ${list == decoded}")
 }
