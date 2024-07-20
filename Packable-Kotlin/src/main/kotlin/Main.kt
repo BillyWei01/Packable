@@ -31,8 +31,8 @@ private fun testEncodeObjectList() {
         Person("Mary", 18)
     )
 
-    val encoded = PackEncoder.encodeObjectList(list, PersonAdapter)
-    val decoded = PackDecoder.decodeObjectList(encoded, PersonAdapter)
+    val encoded = PersonAdapter.encodeObjectList(list)
+    val decoded = PersonAdapter.decodeObjectList(encoded)
 
     println("Person list: ${list == decoded}")
 }
